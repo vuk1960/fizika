@@ -1,0 +1,2 @@
+# fizika
+oktató feladatsor
