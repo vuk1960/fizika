@@ -6,79 +6,236 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; max-width: 950px; margin: 20px auto; padding: 20px; background: #eceff1; }
         .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-        .input-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
-        .input-group { background: #cfd8dc; padding: 15px; border-radius: 8px; text-align: center; }
-        .given { background: #4caf50; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
-        input { width: 80px; padding: 5px; font-weight: bold; }
+        .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .mode-selector { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; background: #cfd8dc; padding: 15px; border-radius: 10px; }
+        .mode-btn { padding: 12px 30px; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; transition: 0.3s; }
+        .mode-btn.active { background: #1a237e; color: white; transform: scale(1.05); }
+        .exam-nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+        .task-btn { background: #e0e0e0; border: none; padding: 12px; cursor: pointer; border-radius: 6px; font-weight: bold; }
+        .task-btn.active { background: #2196f3; color: white; }
+        .task-btn.done { background: #4caf50 !important; color: white; }
+        .exercise-area { border: 2px solid #e1e4e8; padding: 25px; border-radius: 10px; background: #fafafa; }
+        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin: 20px 0; }
+        .input-group { background: #cfd8dc; padding: 12px; border-radius: 8px; }
+        input { padding: 8px; width: 80px; border: 2px solid #ccc; border-radius: 6px; font-weight: bold; }
+        .given { background: #4caf50; color: white; padding: 5px 12px; border-radius: 4px; font-weight: bold; }
         .action-btn { background: #1a237e; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 6px; font-weight: bold; margin: 5px; }
-        .solution { display: none; background: #fffde7; padding: 15px; border-radius: 8px; border: 1px solid #fbc02d; margin-top: 15px; line-height: 1.8; }
+        .help-btn { background: #ff9800; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 6px; font-weight: bold; }
+        .solution { display: none; background: #fffde7; padding: 20px; border-radius: 8px; border: 1px solid #fbc02d; margin-top: 15px; line-height: 1.8; color: #5d4037; }
+        .step-num { background: #fbc02d; color: black; padding: 2px 8px; border-radius: 50%; font-weight: bold; margin-right: 10px; }
+        .result-screen { display: none; text-align: center; padding: 40px; background: #e8eaf6; border: 4px solid #1a237e; border-radius: 20px; margin-top: 20px; }
+        a { color: #1a237e; text-decoration: none; font-weight: bold; border-bottom: 1px dashed #1a237e; }
     </style>
 </head>
 <body>
+
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="color: #1a237e;">Összetett Mechanika</h1>
-        <a href="index.html" style="font-weight: bold; color: #1a237e; text-decoration: none;">← Főoldal</a>
+    <div class="header-area">
+        <h1 style="color: #1a237e; margin: 0;">Összetett Mechanika</h1>
+        <a href="index.html">← Vissza az index oldalra</a>
     </div>
-    <p>Töltsd ki a hiányzó 3 mezőt a zölddel megadott adatok alapján!</p>
-    <div class="input-grid" id="fields"></div>
-    <div style="text-align: center;">
-        <button class="action-btn" onclick="checkComplex()">Ellenőrzés</button>
-        <button class="action-btn" style="background:#673ab7" onclick="generate()">Új feladat</button>
-        <button class="action-btn" style="background:#ff9800" onclick="showComplexHelp()">Szájbarágós segítség</button>
+
+    <div class="mode-selector">
+        <button id="m-gyak" class="mode-btn active" onclick="changeMode('gyak')">Gyakorlás</button>
+        <button id="m-exam" class="mode-btn" onclick="changeMode('exam')">Feleltetés (5 feladat)</button>
     </div>
-    <div id="feedback" style="margin-top:15px; text-align: center; font-weight: bold;"></div>
-    <div id="sol-box" class="solution"></div>
-    <div id="grade-area" style="display:none; text-align: center; margin-top: 20px; padding: 20px; border: 3px solid #1a237e;"></div>
+
+    <div id="exam-nav-container" class="exam-nav" style="display:none;">
+        <button class="task-btn active" id="t0" onclick="switchTask(0)">1. feladat</button>
+        <button class="task-btn" id="t1" onclick="switchTask(1)">2. feladat</button>
+        <button class="task-btn" id="t2" onclick="switchTask(2)">3. feladat</button>
+        <button class="task-btn" id="t3" onclick="switchTask(3)">4. feladat</button>
+        <button class="task-btn" id="t4" onclick="switchTask(4)">5. feladat</button>
+    </div>
+
+    <div class="exercise-area" id="main-area">
+        <h2 id="task-info">Gyakorló feladat</h2>
+        <p>Számold ki a hiányzó adatokat a megadott 3 érték alapján!</p>
+        <div class="input-grid" id="input-fields"></div>
+
+        <div id="controls">
+            <button class="action-btn" onclick="checkAnswers()">Ellenőrzés</button>
+            <button id="new-btn" class="action-btn" style="background:#673ab7" onclick="generateRandom()">Új feladat</button>
+            <button class="help-btn" onclick="generateSmartHelp()">Súgó (lépésről lépésre)</button>
+        </div>
+
+        <div id="feedback" style="margin-top:15px; font-weight: bold;"></div>
+        <div id="solution-box" class="solution"></div>
+    </div>
+
+    <div id="result-screen" class="result-screen"></div>
 </div>
+
 <script>
-    let vals = {}, givenKeys = [], tries = 0;
-    const labels = { m:'Tömeg (kg)', F:'Erő (N)', a:'Gyorsulás (m/s²)', t:'Idő (s)', v:'Végsebesség (m/s)', s:'Út (m)' };
+    let mode = 'gyak', currentTaskIdx = 0, examData = [], examScores = [0,0,0,0,0], helpUsed = [false,false,false,false,false];
+    let currentValues = {}, currentGiven = [];
+    let totalTries = 0; // Az összes ellenőrzés gombnyomást számolja
 
-    function generate() {
-        tries++; document.getElementById('feedback').innerHTML = ''; document.getElementById('sol-box').style.display='none';
+    const labels = { m:'Tömeg (m)', F:'Erő (F)', a:'Gyorsulás (a)', t:'Idő (t)', v:'Végsebesség (v)', s:'Út (s)' };
+
+    function changeMode(m) {
+        mode = m;
+        document.getElementById('m-gyak').classList.toggle('active', m === 'gyak');
+        document.getElementById('m-exam').classList.toggle('active', m === 'exam');
+        document.getElementById('exam-nav-container').style.display = (m === 'exam' ? 'grid' : 'none');
+        document.getElementById('new-btn').style.display = (m === 'exam' ? 'none' : 'inline-block');
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('main-area').style.display = 'block';
+        if(m === 'exam') startExam(); else generateRandom();
+    }
+
+    function startExam() {
+        examData = []; examScores = [0,0,0,0,0]; helpUsed = [false,false,false,false,false];
+        for(let i=0; i<5; i++) examData.push(generateData());
+        document.querySelectorAll('.task-btn').forEach(b => b.classList.remove('done', 'active'));
+        switchTask(0);
+    }
+
+    function generateData() {
         let m = Math.floor(Math.random()*10)+2, a = Math.floor(Math.random()*5)+1, t = Math.floor(Math.random()*8)+2;
-        vals = { m, a, t, F: m*a, v: a*t, s: 0.5*a*(t*t) };
-        givenKeys = Object.keys(vals).sort(() => 0.5 - Math.random()).slice(0, 3);
-        const f = document.getElementById('fields'); f.innerHTML = '';
+        let vals = { m: m, F: m*a, a: a, t: t, v: a*t, s: 0.5*a*(t*t) };
+        let keys = ['m', 'F', 'a', 't', 'v', 's'];
+        let given = keys.sort(() => 0.5 - Math.random()).slice(0, 3);
+        return { vals, given };
+    }
+
+    function switchTask(idx) {
+        currentTaskIdx = idx;
+        document.querySelectorAll('.task-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+        currentValues = examData[idx].vals;
+        currentGiven = examData[idx].given;
+        document.getElementById('task-info').innerText = `${idx + 1}. feladat (Feleltetés)`;
+        document.getElementById('solution-box').style.display = 'none';
+        renderFields();
+    }
+
+    function generateRandom() {
+        let d = generateData();
+        currentValues = d.vals; currentGiven = d.given;
+        document.getElementById('task-info').innerText = "Gyakorló feladat";
+        document.getElementById('solution-box').style.display = 'none';
+        renderFields();
+    }
+
+    function renderFields() {
+        const container = document.getElementById('input-fields');
+        container.innerHTML = '';
         for(let k in labels) {
-            let isG = givenKeys.includes(k);
-            f.innerHTML += `<div class="input-group"><label>${labels[k]}</label><br>${isG ? `<span class="given">${vals[k].toFixed(1)}</span>` : `<input type="number" step="0.1" id="in-${k}">`}</div>`;
+            let isGiven = currentGiven.includes(k);
+            container.innerHTML += `<div class="input-group">
+                <label>${labels[k]}:</label>
+                ${isGiven ? `<span class="given">${currentValues[k].toFixed(1)}</span>` : `<input type="number" step="0.1" id="in-${k}">`}
+            </div>`;
         }
     }
 
-    function checkComplex() {
+    function generateSmartHelp() {
+        if(mode === 'exam') helpUsed[currentTaskIdx] = true;
+        const box = document.getElementById('solution-box');
+        box.style.display = 'block';
+        
+        let steps = "<b>Útmutató a megoldáshoz:</b><br>";
+        let g = currentGiven;
+
+        // Logikai lánc felépítése
+        if (g.includes('m') && g.includes('F')) {
+            steps += `<span class="step-num">1</span> Számold ki a gyorsulást az alaptörvényből: <b>a = F / m</b><br>`;
+        } else if (g.includes('v') && g.includes('t')) {
+            steps += `<span class="step-num">1</span> Számold ki a gyorsulást a sebességből: <b>a = v / t</b><br>`;
+        } else if (g.includes('s') && g.includes('t')) {
+            steps += `<span class="step-num">1</span> Számold ki a gyorsulást az útból: <b>a = 2 · s / t²</b><br>`;
+        } else {
+            steps += `<span class="step-num">1</span> Először keresd meg azt a képletet, amiben csak egyetlen ismeretlen maradt (pl. F, m és a hármasából).<br>`;
+        }
+
+        steps += `<span class="step-num">2</span> Ha megvan a <b>gyorsulás (a)</b>, használd a Dinamika képletét a hiányzó erőhöz vagy tömeghez: <b>F = m · a</b><br>`;
+        steps += `<span class="step-num">3</span> Végül a Kinematika képleteivel (<b>v = a · t</b> és <b>s = a/2 · t²</b>) számold ki a mozgás jellemzőit!`;
+
+        box.innerHTML = steps;
+    }
+
+    function checkAnswers() {
+        totalTries++;
         let ok = true;
-        for(let k in vals) if(!givenKeys.includes(k)) {
-            let v = parseFloat(document.getElementById('in-'+k).value);
-            if(isNaN(v) || Math.abs(v - vals[k]) > 0.2) ok = false;
+        for(let k in currentValues) {
+            if(!currentGiven.includes(k)) {
+                let input = document.getElementById('in-'+k);
+                if (!input) continue;
+                let v = parseFloat(input.value);
+                if(isNaN(v) || Math.abs(v - currentValues[k]) > 0.2) ok = false;
+            }
         }
-        const fb = document.getElementById('feedback'); fb.innerHTML = ok ? "✅ Tökéletes!" : "❌ Hiba a számításban!"; fb.style.color = ok ? "green" : "red";
-        if(ok) {
-            const ga = document.getElementById('grade-area'); ga.style.display = 'block';
-            ga.innerHTML = `<h3>Sikeres megoldás!</h3><button class="action-btn" onclick="saveJPG()">JPG Bizonyítvány Mentése</button>`;
+        const fb = document.getElementById('feedback');
+        fb.innerHTML = ok ? "✅ Helyes! Minden adat pontos." : "❌ Hibás számítás, próbáld újra!";
+        fb.style.color = ok ? "green" : "red";
+
+        if(ok && mode === 'exam') {
+            examScores[currentTaskIdx] = helpUsed[currentTaskIdx] ? 0.5 : 1;
+            document.getElementById('t' + currentTaskIdx).classList.add('done');
+            if(document.querySelectorAll('.task-btn.done').length === 5) finishExam();
         }
     }
 
-    function showComplexHelp() {
-        let help = "<b>Lépésről lépésre:</b><br>";
-        if(givenKeys.includes('F') && givenKeys.includes('m')) help += "1. Az F és m adatokból számold ki a gyorsulást: <b>a = F / m</b><br>";
-        else if(givenKeys.includes('v') && givenKeys.includes('t')) help += "1. A v és t adatokból számold ki a gyorsulást: <b>a = v / t</b><br>";
-        help += "2. Ha megvan az 'a', a többi képlet (v=a·t, s=a/2·t²) már csak behelyettesítés!";
-        const sb = document.getElementById('sol-box'); sb.innerHTML = help; sb.style.display = 'block';
+    function finishExam() {
+        let total = examScores.reduce((a, b) => a + b, 0);
+        let grade = total >= 4.5 ? 5 : total >= 3.5 ? 4 : total >= 2.5 ? 3 : total >= 1.5 ? 2 : 1;
+        document.getElementById('main-area').style.display = 'none';
+        const res = document.getElementById('result-screen');
+        res.style.display = 'block';
+        res.innerHTML = `<h2>Vizsga lezárva</h2>
+            <p>Pontszám: <b>${total} / 5</b></p>
+            <h1 style="font-size: 4em; color: #1a237e;">JEGY: ${grade}</h1>
+            <button class="action-btn" onclick="saveResult(${total}, ${grade})">Eredmény mentése</button>
+            <button class="action-btn" style="background:#607d8b" onclick="changeMode('gyak')">Újrakezdés</button>`;
     }
 
-    function saveJPG() {
-        const c = document.createElement('canvas'); const ctx = c.getContext('2d'); c.width = 600; c.height = 400;
-        ctx.fillStyle = '#f9f9f9'; ctx.fillRect(0,0,600,400); ctx.strokeStyle = '#1a237e'; ctx.lineWidth = 8; ctx.strokeRect(10,10,580,380);
-        ctx.fillStyle = '#1a237e'; ctx.textAlign = 'center'; ctx.font = 'bold 32px Arial'; ctx.fillText('MECHANIKA BIZONYÍTVÁNY', 300, 80);
-        ctx.font = '20px Arial'; ctx.fillText('Témakör: Összetett Mechanika (Híd)', 300, 140);
-        ctx.fillText(`Próbálkozások száma: ${tries}`, 300, 190);
-        ctx.font = 'bold 50px Arial'; ctx.fillText('Értékelés: KIVÁLÓ', 300, 310);
-        const l = document.createElement('a'); l.download = 'mechanika_cert.jpg'; l.href = c.toDataURL('image/jpeg'); l.click();
-    }
-    generate();
+    function saveResult(score, grade) {
+    // Canvas létrehozása
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 600;
+    canvas.height = 400;
+
+    // Háttér és keret rajzolása
+    ctx.fillStyle = '#f4f7f6';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#1a237e';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+    // Szövegek formázása és írása
+    ctx.fillStyle = '#1a237e';
+    ctx.textAlign = 'center';
+    
+    ctx.font = 'bold 30px Segoe UI';
+    ctx.fillText('BIZONYÍTVÁNY', 300, 60);
+
+    ctx.font = '20px Segoe UI';
+    ctx.fillStyle = '#333';
+    ctx.fillText('Témakör: Összetett Mechanika (Dinamika + Kinematika)', 300, 110);
+    
+    ctx.font = 'bold 24px Segoe UI';
+    ctx.fillText(`Elért eredmény: ${score} / 5 pont`, 300, 160);
+    
+    ctx.font = '20px Segoe UI';
+    ctx.fillText(`Összes próbálkozás száma: ${totalTries}`, 300, 200);
+    
+    ctx.font = '16px Segoe UI';
+    ctx.fillText(`Dátum: ${new Date().toLocaleString()}`, 300, 240);
+
+    // Jegy nagy méretben
+    ctx.font = 'bold 80px Segoe UI';
+    ctx.fillStyle = '#1a237e';
+    ctx.fillText(`JEGY: ${grade}`, 300, 340);
+
+    // Mentés JPG-ként
+    const link = document.createElement('a');
+    link.download = `fizika_bizonyitvany_${new Date().getTime()}.jpg`;
+    link.href = canvas.toDataURL('image/jpeg', 0.9);
+    link.click();
+}
+
+    generateRandom();
 </script>
 </body>
 </html>
-
