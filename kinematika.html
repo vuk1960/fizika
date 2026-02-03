@@ -75,7 +75,27 @@
         meet: "<b>Találkozás és üldözés:</b><br>Szembe haladás: <i>v_rel = v₁ + v₂</i><br>Üldözés: <i>v_rel = v₁ - v₂</i> (v₁ a gyorsabb)<br>Idő: <i>t = s_távolság / v_rel</i>",
         free: "<b>Szabadesés és Hajítás (g = 10 m/s²):</b><br>Leejtés: <i>v = g · t</i>; <i>h = 5 · t²</i><br>Függőleges felfelé hajítás: <i>v = v₀ - g · t</i>. A csúcsponton v = 0, innen <i>v₀ = g · t</i> és <i>h_max = v₀² / 2g</i>."
     };
+//***********************
+  // Egységes magyar formázás: tizedes VESSZŐ, ezres TAGOLÁS
+  // d = minimum és maximum tizedesjegy (fix tizedes formátumhoz)
+  function fmt(x, d = null) {
+    const opts = d === null 
+      ? {} 
+      : { minimumFractionDigits: d, maximumFractionDigits: d };
+    return Number(x).toLocaleString('hu-HU', opts);
+  }
 
+  // Hasznos: egész/arányos tizedesszám-választás tipikus mennyiségekre
+  // Példák: fmtAuto(46.8) -> "46,8", fmtAuto(1234.567) -> "1 234,57"
+  function fmtAuto(x) {
+    const ax = Math.abs(x);
+    let d = 2; // alapértelmezett
+    if (ax >= 100) d = 0;
+    else if (ax >= 10) d = 1;
+    return fmt(x, d);
+  }
+
+//*********************
     function toggleTheory() {
         const box = document.getElementById('theory-text');
         box.innerHTML = theoryData[currentCat];
