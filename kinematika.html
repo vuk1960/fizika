@@ -31,7 +31,7 @@
 <div class="card">
     <div id="exam-timer" class="timer" style="display:none;">00:00</div>
     <h1 style="text-align:center; color: #1a237e;">Fizika interaktív oktató</h1>
-    <h1 style="text-align:right; color: #1a237e; font-size: 1rem;"> <a href="index.html">← Vissza az index oldalra</a></h1>
+    <h1 style="text-align:right; color: #1a237e; font-size: 1rem;"> <a href="index.html">← Vissza a főoldalra</a></h1>
     
     <div class="mode-selector">
         <button id="mode-gyak" class="mode-btn active" onclick="setMode('gyak')">Gyakorlás</button>
@@ -121,26 +121,57 @@
             document.getElementById('exercise-text').innerHTML = `Egy autó <b>${t} s</b> alatt <b>${s} m</b> utat tesz meg. Mekkora a sebessége?`;
             currentTasks = [{label:"Sebesség", a:v, unit:"m/s"}]; fullSteps = `v = s / t = ${s} / ${t} = ${v} m/s.`;
         } else {
-            document.getElementById('exercise-text').innerHTML = `Egy jármű <b>${v*3.6} km/h</b> sebességgel halad <b>${t} s</b>-ig. Mekkora utat tesz meg?`;
-            currentTasks = [{label:"Út", a:s, unit:"m"}]; fullSteps = `v = ${v*3.6} / 3.6 = ${v} m/s. <br> s = v * t = ${v} * ${t} = ${s} m.`;
+            
+            const v_kmh = (v * 3.6).toLocaleString('hu-HU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            document.getElementById('exercise-text').innerHTML = `Egy jármű <b>${v_kmh} km/h</b> sebességgel halad <b>${t} s</b>-ig. Mekkora utat tesz meg?`;
+            fullSteps = `v = ${v_kmh} / 3,6 = ${v} m/s. <br> s = v * t = ${v} * ${t} = ${s} m.`;     
+ }
+    }
+
+
+    function genAcc(r) {
+        let a = 2 + Math.floor(Math.random()*3), 
+            t = 4 + Math.floor(Math.random()*6), 
+            v = a * t, 
+            s = 0.5 * a * t * t;
+
+        if (r < 0.33) {
+            document.getElementById('exercise-text').innerHTML = 
+                `Nyugalomból induló test <b>${t} s</b> alatt <b>${v} m/s</b>-ra gyorsul. Gyorsulás, út és végsebesség?`;
+            currentTasks = [
+                { label: "Gyorsulás", a: a, unit: "m/s²" },
+                { label: "Út", a: s, unit: "m" },
+                { label: "Végsebesség", a: v, unit: "m/s" }
+            ];
+            fullSteps = 
+                `a = v/t = ${v}/${t} = ${a} m/s². <br>
+                 s = a/2 * t² = ${a/2} * ${t*t} = ${s} m. <br>
+                 v = a * t = ${a} * ${t} = ${v} m/s.`;
+        } else if (r < 0.66) {
+            document.getElementById('exercise-text').innerHTML = 
+                `<b>${a} m/s²</b> gyorsulással induló gépkocsi <b>${s} m</b> utat tesz meg. Idő, átlagsebesség és végsebesség?`;
+            currentTasks = [
+                { label: "Idő", a: t, unit: "s" },
+                { label: "Átlagsebesség", a: s / t, unit: "m/s" },
+                { label: "Végsebesség", a: v, unit: "m/s" }
+            ];
+            fullSteps = 
+                `t = √(2s/a) = √(${2*s}/${a}) = ${t} s. <br>
+                 v_átl = s/t = ${s}/${t} = ${(s/t)} m/s. <br>
+                 v = a * t = ${a} * ${t} = ${v} m/s.`;
+        } else {
+            document.getElementById('exercise-text').innerHTML = 
+                `Mekkora utat tesz meg a test <b>${t} s</b> alatt, ha <b>${a} m/s²</b> gyorsulással indul? Add meg a végsebességet is!`;
+            currentTasks = [
+                { label: "Út", a: s, unit: "m" },
+                { label: "Végsebesség", a: v, unit: "m/s" }
+            ];
+            fullSteps = 
+                `s = a/2 * t² = ${a/2} * ${t*t} = ${s} m. <br>
+                 v = a * t = ${a} * ${t} = ${v} m/s.`;
         }
     }
 
-    function genAcc(r) {
-        let a = 2 + Math.floor(Math.random()*3), t = 4 + Math.floor(Math.random()*6), v = a*t, s = 0.5*a*t*t;
-        if(r < 0.33) {
-            document.getElementById('exercise-text').innerHTML = `Nyugalomból induló test <b>${t} s</b> alatt <b>${v} m/s</b>-ra gyorsul. Gyorsulás és út?`;
-            currentTasks = [{label:"Gyorsulás", a:a, unit:"m/s²"}, {label:"Út", a:s, unit:"m"}];
-            fullSteps = `a = v/t = ${v}/${t} = ${a} m/s². <br> s = a/2 * t² = ${a/2} * ${t*t} = ${s} m.`;
-        } else if(r < 0.66) {
-            document.getElementById('exercise-text').innerHTML = `<b>${a} m/s²</b> gyorsulással induló gépkocsi <b>${s} m</b> utat tesz meg. Idő és átlagsebesség?`;
-            currentTasks = [{label:"Idő", a:t, unit:"s"}, {label:"Átlagsebesség", a:s/t, unit:"m/s"}];
-            fullSteps = `t = √(2s/a) = √(${2*s}/${a}) = ${t} s. <br> v_átl = s/t = ${s/t} m/s.`;
-        } else {
-            document.getElementById('exercise-text').innerHTML = `Mekkora utat tesz meg a test <b>${t} s</b> alatt, ha <b>${a} m/s²</b> gyorsulással indul?`;
-            currentTasks = [{label:"Út", a:s, unit:"m"}]; fullSteps = `s = a/2 * t² = ${a/2} * ${t*t} = ${s} m.`;
-        }
-    }
 
     function genMeet(r) {
         let v1 = 20, v2 = 10, d = 300, t = 10;
@@ -156,24 +187,96 @@
     }
 
     function genFree(r) {
-        let g = 10;
-        if(r < 0.33) { // Szabadesés
-            let t = 3 + Math.floor(Math.random()*3), h = 0.5*g*t*t;
-            document.getElementById('exercise-text').innerHTML = `Szabadon eső test <b>${t} s</b> alatt ér földet. Magasság és becsapódási sebesség?`;
-            currentTasks = [{label:"Magasság", a:h, unit:"m"}, {label:"Sebesség", a:g*t, unit:"m/s"}];
-            fullSteps = `h = g/2 * t² = 5 * ${t*t} = ${h} m. <br> v = g * t = 10 * ${t} = ${g*t} m/s.`;
-        } else if(r < 0.66) { // Felfelé hajítás
-            let v0 = 20 + Math.floor(Math.random()*20), t_f = v0/g, h_m = (v0*v0)/(2*g);
-            document.getElementById('exercise-text').innerHTML = `Függőlegesen felfelé dobunk egy testet <b>${v0} m/s</b> kezdősebességgel.`;
-            currentTasks = [{label:"Emelkedési idő", a:t_f, unit:"s"}, {label:"Max magasság", a:h_m, unit:"m"}];
-            fullSteps = `t = v₀/g = ${v0}/10 = ${t_f} s. <br> h_max = v₀²/2g = ${v0*v0}/20 = ${h_m} m.`;
-        } else { // Magasságból dobás (időből v0)
-            let t = 3, v0 = 30, h = 45;
-            document.getElementById('exercise-text').innerHTML = `Egy felfelé dobott test <b>${t} s</b> alatt ért fel a pályája csúcsára. Kezdősebesség és magasság?`;
-            currentTasks = [{label:"Kezdősebesség", a:v0, unit:"m/s"}, {label:"Max magasság", a:h, unit:"m"}];
-            fullSteps = `A csúcson v=0, így v₀ = g * t = 10 * ${t} = ${v0} m/s. <br> h = v₀²/2g = 900/20 = ${h} m.`;
+        const g = 10;
+
+        if (r < 0.25) { 
+            // Szabadesés: adott idő -> magasság és végsebesség
+            const t = 3 + Math.floor(Math.random() * 3); // 3..5 s
+            const h = 0.5 * g * t * t;
+            const v = g * t;
+
+            document.getElementById('exercise-text').innerHTML =
+                `Szabadon eső test <b>${t} s</b> alatt ér földet. 
+                 Határozd meg a <b>magasságot</b> és a <b>végsebességet</b> (becsapódási sebesség)!`;
+
+            currentTasks = [
+                { label: "Magasság", a: h, unit: "m" },
+                { label: "Végsebesség", a: v, unit: "m/s" }
+            ];
+
+            fullSteps = 
+                `h = (g/2)·t² = 5 · ${t*t} = ${h} m. <br>
+                 v = g · t = 10 · ${t} = ${v} m/s.`;
+
+        } else if (r < 0.5) { 
+            // ÚJ feladattípus: adott magasság -> esési idő és végsebesség
+            const hList = [20, 45, 80, 125, 180, 200];
+            const h = hList[Math.floor(Math.random() * hList.length)];
+            const t = Math.sqrt((2 * h) / g);
+            const v = Math.sqrt(2 * g * h);
+
+            document.getElementById('exercise-text').innerHTML =
+                `Egy testet <b>${h} m</b> magasból leejtünk (nyugalomból indul). 
+                 Mennyi az <b>esési idő</b> és mekkora a <b>végsebesség</b>?`;
+
+            currentTasks = [
+                { label: "Idő", a: t, unit: "s" },
+                { label: "Végsebesség", a: v, unit: "m/s" }
+            ];
+
+            fullSteps =
+                `t = √(2h/g) = √(${2*h}/10) = ${t} s. <br>
+                 v = g · t = 10 · ${t} = ${v} m/s 
+                 (ekvivalensen: v = √(2gh) = √(20 · ${h}) = ${v} m/s).`;
+
+        } else if (r < 0.75) { 
+            // Felfelé hajítás: kérjük az emelkedési időt és max magasságot, + adjunk végsebességet a talajon
+            const v0 = 20 + Math.floor(Math.random() * 20); // 20..39 m/s
+            const t_fel = v0 / g;             // feljutási idő
+            const h_max = (v0 * v0) / (2 * g);
+            const v_le = v0; // vákuumban visszaérkezéskor |v| = v0 (irány lefelé), itt nagyságot kérünk
+
+            document.getElementById('exercise-text').innerHTML =
+                `Függőlegesen felfelé dobunk egy testet <b>${v0} m/s</b> kezdősebességgel.
+                 Határozd meg az <b>emelkedési időt</b>, a <b>maximális magasságot</b>, 
+                 és add meg a <b>talajt elérő sebesség nagyságát</b> (végsebesség)!`;
+
+            currentTasks = [
+                { label: "Emelkedési idő", a: t_fel, unit: "s" },
+                { label: "Max magasság", a: h_max, unit: "m" },
+                { label: "Végsebesség (talajnál)", a: v_le, unit: "m/s" }
+            ];
+
+            fullSteps =
+                `t_fel = v₀/g = ${v0}/10 = ${t_fel} s. <br>
+                 h_max = v₀²/(2g) = ${v0*v0}/20 = ${h_max} m. <br>
+                 (Légellenállás nélkül visszaesve |v| = v₀, így a talajnál v = ${v_le} m/s.)`;
+
+        } else { 
+            // Időből v0 (csúcspont ideje adott), kérjük kezdősebességet, max magasságot és talajon a sebesség nagyságát
+            const t = 3;        // csúcsig tartó idő
+            const v0 = g * t;
+            const h = (v0 * v0) / (2 * g);
+            const v_le = v0;    // visszaérkezés végsebessége nagyságban
+
+            document.getElementById('exercise-text').innerHTML =
+                `Egy felfelé dobott test <b>${t} s</b> alatt ér fel a pályája csúcsára. 
+                 Határozd meg a <b>kezdősebességet</b>, a <b>maximális magasságot</b> és a 
+                 <b>talajt elérő sebesség nagyságát</b> (végsebesség)!`;
+
+            currentTasks = [
+                { label: "Kezdősebesség", a: v0, unit: "m/s" },
+                { label: "Max magasság", a: h, unit: "m" },
+                { label: "Végsebesség (talajnál)", a: v_le, unit: "m/s" }
+            ];
+
+            fullSteps =
+                `A csúcson v = 0, így v₀ = g · t = 10 · ${t} = ${v0} m/s. <br>
+                 h_max = v₀²/(2g) = ${v0*v0}/20 = ${h} m. <br>
+                 (Légellenállás nélkül visszaérkezéskor |v| = v₀, tehát v = ${v_le} m/s.)`;
         }
     }
+
 
     function showSolution() {
         solSeen = true;
@@ -255,5 +358,3 @@
 </script>
 </body>
 </html>
-
-
