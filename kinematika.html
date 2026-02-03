@@ -71,6 +71,7 @@
     let appMode = 'gyak', currentCat = 'uni', currentTasks = [], fullSteps = "", solSeen = false;
     let examScore = { uni: 0, acc: 0, meet: 0, free: 0 }, examDone = { uni: false, acc: false, meet: false, free: false };
     let seconds = 0, timerInterval;
+    let totalTries = 0; // Az összes ellenőrzés gombnyomást számolja
 
     const theoryData = {
         uni: "<b>Egyenes vonalú egyenletes mozgás:</b><br>Képlet: <i>s = v · t</i>. A sebesség állandó.<br>Átváltások: 1 m/s = 3,6 km/h; 1 perc = 60 s.",
@@ -187,6 +188,7 @@
 
     function checkAnswers() {
         let allC = true, anyE = false;
+        totalTries++;
         currentTasks.forEach((t, i) => { let v = document.getElementById(`ans-${i}`).value; if(v==="") anyE = true; if(Math.abs(parseFloat(v)-t.a)>0.5) allC = false; });
         const f = document.getElementById('feedback');
         if(anyE) { f.innerHTML = "Töltsd ki az összes mezőt!"; return; }
@@ -207,17 +209,58 @@
         }
     }
 
-    function saveResult(g) {
-        let n = document.getElementById('sname').value || "Névtelen", t = document.getElementById('exam-timer').innerText;
-        let blob = new Blob([`FIZIKA VIZSGA\nNév: ${n}\nIdő: ${t}\nJegy: ${g}\nDátum: ${new Date().toLocaleString()}`], {type:"text/plain"});
-        let a = document.createElement("a"); a.download=`fizika_jegy_${n}.txt`; a.href=URL.createObjectURL(blob); a.click();
-    }
+    function saveResult(score, grade) {
+    // Canvas létrehozása
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 600;
+    canvas.height = 400;
+
+    // Háttér és keret rajzolása
+    ctx.fillStyle = '#f4f7f6';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#1a237e';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+    // Szövegek formázása és írása
+    ctx.fillStyle = '#1a237e';
+    ctx.textAlign = 'center';
+    
+    ctx.font = 'bold 30px Segoe UI';
+    ctx.fillText('BIZONYÍTVÁNY', 300, 60);
+
+    ctx.font = '20px Segoe UI';
+    ctx.fillStyle = '#333';
+    ctx.fillText('Témakör: Összetett Mechanika (Dinamika + Kinematika)', 300, 110);
+    
+    ctx.font = 'bold 24px Segoe UI';
+    ctx.fillText(`Elért eredmény: ${score} / 5 pont`, 300, 160);
+    
+    ctx.font = '20px Segoe UI';
+    ctx.fillText(`Összes próbálkozás száma: ${totalTries}`, 300, 200);
+    
+    ctx.font = '16px Segoe UI';
+    ctx.fillText(`Dátum: ${new Date().toLocaleString()}`, 300, 240);
+
+    // Jegy nagy méretben
+    ctx.font = 'bold 80px Segoe UI';
+    ctx.fillStyle = '#1a237e';
+    ctx.fillText(`JEGY: ${grade}`, 300, 340);
+
+    // Mentés JPG-ként
+    const link = document.createElement('a');
+    link.download = `fizika_bizonyitvany_${new Date().getTime()}.jpg`;
+    link.href = canvas.toDataURL('image/jpeg', 0.9);
+    link.click();
+
 
     generateTask();
 </script>
 </body>
 
 </html>
+
 
 
 
