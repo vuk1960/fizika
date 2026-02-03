@@ -6,32 +6,62 @@
     <title>A fizika tananyag</title>
     <style>
         body { font-family: sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f4f4f4; }
-        header { background: #333; color: #fff; padding: 1rem; text-align: center; }
+
+        /* FEJLÉC – SZÖVEG BALRA, LOGÓ JOBBRA */
+        header {
+            background: #333;
+            color: #fff;
+            padding: 1rem;
+            /* a lényeg: egysorban, balra szöveg, jobbra logó */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .header-text {
+            text-align: left;
+        }
+        .header-text h1 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.8rem;
+        }
+        .header-text p {
+            margin: 0;
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+        /* Logó méretezése – kisméretű, jobbra igazítva */
+        .header-logo {
+            height: 48px;           /* állítsd igény szerint: 36–64px jó logónak */
+            width: auto;
+            display: block;
+            object-fit: contain;
+            filter: none;           /* sötét háttéren jó kontrasztú logó esetén így oké */
+        }
+
+        /* NAV és TÖRZS marad az eredeti szerint */
         nav { background: #444; padding: 0.5rem; text-align: center; }
         nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
         nav a:hover { color: #ff9900; }
         .container { padding: 20px; max-width: 800px; margin: auto; background: white; min-height: 400px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         footer { text-align: center; padding: 20px; font-size: 0.8rem; color: #666; }
+
+        /* Reszponzív finomhangolás: keskeny kijelzőn logó kisebb, sor megtartható */
+        @media (max-width: 480px) {
+            .header-logo { height: 40px; }
+            .header-text h1 { font-size: 1.5rem; }
+        }
     </style>
 </head>
 <body>
 
 <header>
-    
-header {
-    text-align: left;   /* ← EZ A LÉNYEG */
-}
-
-.header-img {
-    display: block;
-    margin: 0 0 15px 0; /* nincs auto, így balra kerül */
-    max-width: 100%;
-    height: auto;
-}
-
-    <h1>Fizika világa</h1>
-    <img src="fejlec.jpg" alt="Fizika fejléc kép" class="header-img">
-    <p>Segédlet a 7. A osztály diákjainak</p>
+    <div class="header-text">
+        <h1>Fizika világa</h1>
+        <p>Segédlet a 7. A osztály diákjainak</p>
+    </div>
+    <!-- IDE TÖLTSD BE A LOGÓT: cseréld az útvonalat a sajátodra -->
+    <img class="header-logo" src="img/logo.png" alt="Fizika logó">
 </header>
 
 <nav>
@@ -59,9 +89,3 @@ header {
 
 </body>
 </html>
-
-
-
-
-
-
