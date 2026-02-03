@@ -1,210 +1,81 @@
-
 <!DOCTYPE html>
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
-    <title>Fizika mester - Newton törvényei</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinamika - Newton törvényei</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; max-width: 950px; margin: 20px auto; padding: 20px; background: #eceff1; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-        .mode-selector { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; background: #cfd8dc; padding: 15px; border-radius: 10px; }
-        .mode-btn { padding: 12px 30px; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; transition: 0.3s; }
-        .mode-btn.active { background: #1a237e; color: white; transform: scale(1.05); }
-        .nav-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .nav-btn { background: #e0e0e0; border: none; padding: 12px; cursor: pointer; border-radius: 6px; font-weight: bold; }
-        .nav-btn.active { background: #2196f3; color: white; }
-        .nav-btn.completed { background: #4caf50 !important; color: white; }
-        .exercise-area { border: 2px solid #e1e4e8; padding: 25px; border-radius: 10px; background: #fafafa; min-height: 250px; }
-        input { padding: 10px; width: 120px; border: 2px solid #ccc; border-radius: 6px; font-size: 1.1em; font-weight: bold; }
-        .action-btn { background: #4caf50; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 6px; font-weight: bold; margin: 5px; }
-        .solution { display: none; background: #fffde7; padding: 15px; border-radius: 8px; border: 1px solid #fbc02d; margin-top: 15px; line-height: 1.6; }
-        .grade-box { display: none; text-align: center; padding: 30px; border: 5px solid #1a237e; border-radius: 15px; background: #e8eaf6; margin-top: 20px; }
-        a { color: #1a237e; text-decoration: none; font-weight: bold; }
+        body { font-family: sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f4f4f4; }
+        header { background: #0056b3; color: #fff; padding: 1rem; text-align: center; }
+        nav { background: #444; padding: 0.5rem; text-align: center; }
+        nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        nav a:hover { color: #ff9900; }
+        .container { padding: 20px; max-width: 800px; margin: auto; background: white; min-height: 400px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .torveny { background: #eefbff; border-left: 5px solid #0056b3; padding: 15px; margin: 10px 0; }
+        .feladat { background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #ffeeba; }
+        button { background: #333; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px; }
+        button:hover { background: #ff9900; }
+        footer { text-align: center; padding: 20px; font-size: 0.8rem; color: #666; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="color: #1a237e; margin: 0;">Dinamika:Newton törvényei</h1>
-        <a href="index.html">← Vissza a főoldalra</a>
-    </div>
+<header>
+    <h1>Dinamika</h1>
+    <p>Erők, tömegek és Newton törvényei</p>
+</header>
+
+<nav>
+    <a href="index.html">Főoldal</a>
+    <a href="kinematika.html">Kinematika</a>
+    <a href="dinamika.html">Dinamika</a>
+</nav>
+
+<div class="container">
+    <h2>Newton törvényei</h2>
     
-    <div class="mode-selector">
-        <button id="mode-gyak" class="mode-btn active" onclick="setMode('gyak')">Gyakorlás</button>
-        <button id="mode-felel" class="mode-btn" onclick="setMode('felel')">Felelés (JPG bizonyítvány)</button>
+    <div class="torveny">
+        <h3>I. Newton első törvénye (Tehetetlenség törvénye)</h3>
+        <p>Minden test megtartja nyugugalmi állapotát vagy egyenes vonalú egyenletes mozgását, amíg egy másik test vagy mező erőhatása meg nem változtatja azt.</p>
     </div>
 
-    <div class="nav-menu">
-        <button class="nav-btn active" id="btn-dyn1" onclick="switchCat('dyn1')">I. Tehetetlenség</button>
-        <button class="nav-btn" id="btn-dyn2" onclick="switchCat('dyn2')">II. F=m·a</button>
-        <button class="nav-btn" id="btn-dyn3" onclick="switchCat('dyn3')">III. Hatás-ell.</button>
-        <button class="nav-btn" id="btn-force" onclick="switchCat('force')">Súrlódás / Rugó</button>
+    <div class="torveny">
+        <h3>II. Newton második törvénye (Dinamika alaptörvénye)</h3>
+        <p>Egy testre ható eredő erő (F) egyenesen arányos a test tömegével (m) és a gyorsulásával (a).</p>
+        <p><strong>Képlet: F = m · a</strong></p>
     </div>
 
-    <div class="exercise-area">
-        <div id="exercise-text" style="font-size: 1.25em; margin-bottom: 20px; line-height: 1.4;"></div>
-        <div id="inputs-container"></div>
-        <div id="controls">
-            <button class="action-btn" id="check-btn" onclick="checkAnswers()">Ellenőrzés</button>
-            <button class="action-btn" style="background:#673ab7" onclick="generateTask()">Új feladat</button>
-            <button class="action-btn" style="background:#ff9800" id="sol-btn" onclick="showSolution()">Súgó / Segítség</button>
-        </div>
-        <div id="feedback" style="margin-top: 15px; font-weight: bold; font-size: 1.2em;"></div>
-        <div id="solution-box" class="solution"></div>
+    <div class="torveny">
+        <h3>III. Newton harmadik törvénye (Hatás-ellenhatás)</h3>
+        <p>Két test kölcsönhatásakor az erők mindig párosával lépnek fel: azonos nagyságúak, ellentétes irányúak.</p>
     </div>
-    <div id="grade-display" class="grade-box"></div>
+
+    <div class="feladat">
+        <h3>Gyakorló feladat</h3>
+        <p>Egy 5 kg tömegű autót 20 N erővel tolunk. Mekkora lesz a gyorsulása?</p>
+        <input type="number" id="valasz" placeholder="Írd ide a számot..."> m/s²
+        <button onclick="ellenoriz()">Ellenőrzés</button>
+        <p id="eredmeny"></p>
+    </div>
 </div>
 
 <script>
-    let appMode = 'gyak', currentCat = 'dyn1', currentTasks = [], fullSteps = "", solSeen = false;
-    let examScore = { dyn1: 0, dyn2: 0, dyn3: 0, force: 0 }, examDone = { dyn1: false, dyn2: false, dyn3: false, force: false };
-    let totalTries = 0; // Próbálkozások számlálója
-
-    function setMode(m) {
-        appMode = m;
-        document.getElementById('mode-gyak').className = 'mode-btn' + (m === 'gyak' ? ' active' : '');
-        document.getElementById('mode-felel').className = 'mode-btn' + (m === 'felel' ? ' active' : '');
-        resetExam();
-        generateTask();
-    }
-
-    function resetExam() { 
-        examScore = { dyn1: 0, dyn2: 0, dyn3: 0, force: 0 }; 
-        examDone = { dyn1: false, dyn2: false, dyn3: false, force: false }; 
-        totalTries = 0;
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('completed')); 
-        document.getElementById('grade-display').style.display = 'none'; 
-    }
-
-    function switchCat(cat) { 
-        currentCat = cat; 
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); 
-        document.getElementById('btn-' + cat).classList.add('active'); 
-        generateTask(); 
-    }
-
-    function generateTask() {
-        document.getElementById('feedback').innerHTML = '';
-        document.getElementById('solution-box').style.display = 'none';
-        solSeen = false;
-        const r = Math.random();
-        if(currentCat === 'dyn1') genDyn1();
-        else if(currentCat === 'dyn2') genDyn2(r);
-        else if(currentCat === 'dyn3') genDyn3();
-        else if(currentCat === 'force') genForce(r);
-        renderInputs();
-    }
-
-    function renderInputs() { 
-        document.getElementById('inputs-container').innerHTML = currentTasks.map((t, i) => 
-            `<div style="margin:10px 0;">${t.label}: <input type="number" step="0.1" id="ans-${i}"> <b>${t.unit}</b></div>`
-        ).join(''); 
-    }
-
-    function genDyn1() {
-        let f = Math.floor(Math.random()*40)+10;
-        document.getElementById('exercise-text').innerHTML = `Egy testre balról <b>${f} N</b> erő hat. Mekkora erővel kell hatnunk jobbról, hogy a test nyugalomban maradjon?`;
-        currentTasks = [{label:"Ellenerő", a:f, unit:"N"}];
-        fullSteps = "Newton I. törvénye szerint ha az eredő erő 0, a test nyugalomban marad. Tehát az ellenerő megegyezik a ható erővel.";
-    }
-
-    function genDyn2(r) {
-        let m = Math.floor(Math.random()*10)+2, a = Math.floor(Math.random()*5)+1, f = m*a;
-        if(r < 0.5) {
-            document.getElementById('exercise-text').innerHTML = `Mekkora erő hat a <b>${m} kg</b> tömegű testre, ha <b>${a} m/s²</b> gyorsulással mozog?`;
-            currentTasks = [{label:"Erő (F)", a:f, unit:"N"}];
-            fullSteps = `F = m · a = ${m} · ${a} = ${f} N.`;
+    function ellenoriz() {
+        const v = document.getElementById('valasz').value;
+        const e = document.getElementById('eredmeny');
+        if(v == 4) {
+            e.innerHTML = "✅ Helyes! (20N / 5kg = 4 m/s²)";
+            e.style.color = "green";
         } else {
-            document.getElementById('exercise-text').innerHTML = `Mekkora a gyorsulása egy <b>${m} kg</b> tömegű testnek, ha <b>${f} N</b> erő hat rá?`;
-            currentTasks = [{label:"Gyorsulás (a)", a:a, unit:"m/s²"}];
-            fullSteps = `a = F / m = ${f} / ${m} = ${a} m/s².`;
+            e.innerHTML = "❌ Próbáld újra! Használd az a = F / m képletet.";
+            e.style.color = "red";
         }
     }
-
-    function genDyn3() {
-        let f = Math.floor(Math.random()*100)+20;
-        document.getElementById('exercise-text').innerHTML = `Egy kisfiú <b>${f} N</b> erővel nyomja a falat. Mekkora erővel hat vissza a fal a kisfiúra?`;
-        currentTasks = [{label:"Visszaható erő", a:f, unit:"N"}];
-        fullSteps = "Newton III. törvénye (hatás-ellenhatás): Az erők párosával lépnek fel, egyenlő nagyságúak és ellentétes irányúak.";
-    }
-
-    function genForce(r) {
-        let m = Math.floor(Math.random()*10)+2, mu = 0.2, f = m * 10 * mu;
-        document.getElementById('exercise-text').innerHTML = `Mekkora a súrlódási erő egy vízszintes talajon lévő <b>${m} kg</b> tömegű testen? (µ = 0,2; g = 10 m/s²)`;
-        currentTasks = [{label:"Súrlódási erő", a:f, unit:"N"}];
-        fullSteps = `F_s = µ · m · g = 0,2 · ${m} · 10 = ${f} N.`;
-    }
-
-    function checkAnswers() {
-        totalTries++; // Minden gombnyomás számít
-        let ok = true;
-        currentTasks.forEach((t, i) => {
-            let val = parseFloat(document.getElementById(`ans-${i}`).value);
-            if(isNaN(val) || Math.abs(val - t.a) > 0.1) ok = false;
-        });
-
-        const fb = document.getElementById('feedback');
-        if(ok) {
-            fb.innerHTML = "✅ Helyes válasz!"; fb.style.color = "green";
-            if(appMode === 'felel') {
-                examScore[currentCat] = solSeen ? 0.5 : 1;
-                examDone[currentCat] = true;
-                document.getElementById('btn-' + currentCat).classList.add('completed');
-                checkExamEnd();
-            }
-        } else {
-            fb.innerHTML = "❌ Hibás, próbáld újra!"; fb.style.color = "red";
-        }
-    }
-
-    function showSolution() {
-        solSeen = true;
-        const box = document.getElementById('solution-box');
-        box.innerHTML = `<b>Segítség:</b><br>${fullSteps}<br><i>(Felelésnél a segítség használata fél pontot ér!)</i>`;
-        box.style.display = 'block';
-    }
-
-    function checkExamEnd() {
-        if(Object.values(examDone).every(v => v === true)) {
-            let total = Object.values(examScore).reduce((a, b) => a + b, 0);
-            let grade = total >= 3.5 ? 5 : total >= 3 ? 4 : total >= 2 ? 3 : total >= 1.5 ? 2 : 1;
-            const gBox = document.getElementById('grade-display');
-            gBox.style.display = 'block';
-            gBox.innerHTML = `<h2>Vizsga vége!</h2><p>Pontszám: ${total} / 4</p>
-                <h1 style="font-size: 3em;">JEGY: ${grade}</h1>
-                <button class="action-btn" onclick="saveJPG(${total}, ${grade})">Bizonyítvány mentése (JPG)</button>`;
-        }
-    }
-
-    function saveJPG(score, grade) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 600; canvas.height = 400;
-
-        ctx.fillStyle = '#f4f7f6'; ctx.fillRect(0, 0, 600, 400);
-        ctx.strokeStyle = '#1a237e'; ctx.lineWidth = 10; ctx.strokeRect(5, 5, 590, 390);
-
-        ctx.fillStyle = '#1a237e'; ctx.textAlign = 'center';
-        ctx.font = 'bold 30px Arial'; ctx.fillText('BIZONYÍTVÁNY', 300, 70);
-        
-        ctx.font = '20px Arial'; ctx.fillStyle = '#333';
-        ctx.fillText('Témakör: Newton törvényei (Dinamika)', 300, 120);
-        ctx.fillText(`Pontszám: ${score} / 4`, 300, 170);
-        ctx.fillText(`Összes próbálkozás: ${totalTries}`, 300, 210);
-        ctx.fillText(`Dátum: ${new Date().toLocaleDateString()}`, 300, 250);
-
-        ctx.font = 'bold 70px Arial'; ctx.fillStyle = '#1a237e';
-        ctx.fillText(`JEGY: ${grade}`, 300, 340);
-
-        const link = document.createElement('a');
-        link.download = 'newton_bizonyitvany.jpg';
-        link.href = canvas.toDataURL('image/jpeg');
-        link.click();
-    }
-
-    generateTask();
 </script>
+
+<footer>
+    <p>&copy; 2026 Fizika tananyag - Dinamika fejezet</p>
+</footer>
+
 </body>
 </html>
-
