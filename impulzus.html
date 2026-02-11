@@ -15,35 +15,33 @@
         .nav-btn.completed { background: #4caf50 !important; color: white; }
         .exercise-area { border: 2px solid #e1e4e8; padding: 25px; border-radius: 10px; background: #fafafa; min-height: 350px; }
         .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin: 20px 0; }
-        .input-group { background: #cfd8dc; padding: 15px; border-radius: 8px; border: 1px solid #b0bec5; }
+        .input-group { background: #cfd8dc; padding: 15px; border-radius: 8px; border: 1px solid #b0bec5; display: flex; justify-content: space-between; align-items: center; }
         input { padding: 8px; width: 100px; border: 2px solid #ccc; border-radius: 6px; font-weight: bold; font-size: 1.1em; }
-        .given { background: #4caf50; color: white; padding: 5px 12px; border-radius: 4px; font-weight: bold; }
+        .given-val { background: #4caf50; color: white; padding: 5px 12px; border-radius: 4px; font-weight: bold; min-width: 60px; text-align: center; }
         .action-btn { background: #1a237e; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 6px; font-weight: bold; margin: 5px; }
         .solution { display: none; background: #fffde7; padding: 20px; border-radius: 8px; border: 1px solid #fbc02d; margin-top: 15px; line-height: 1.8; font-family: 'Courier New', monospace; white-space: pre-wrap; }
-        .result-screen { display: none; text-align: center; padding: 40px; background: #e8eaf6; border: 4px solid #1a237e; border-radius: 20px; }
-        .theory-section { background: #e3f2fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #2196f3; }
+        .timer { font-size: 1.5em; font-weight: bold; text-align: right; color: #d32f2f; margin-bottom: 5px; }
+        .grade-box { display: none; text-align: center; padding: 30px; border: 5px solid #1a237e; border-radius: 15px; background: #e8eaf6; margin-top: 20px; }
+        .stat-line { font-size: 0.9em; color: #546e7a; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1 style="color: #1a237e; text-align: center;">Impulzusmegmaradás</h1>
-    <h1 style="text-align:right; color: #1a237e; font-size: 1rem;"> <a href="index.html">← Vissza az index oldalra</a></h1>
+    <div id="exam-timer" class="timer" style="display:none;">00:00</div>
+    <h1 style="color: #1a237e; text-align: center;">Impulzusmegmaradás Pro</h1>
+    <h1 style="text-align:right; color: #1a237e; font-size: 1rem;"> <a href="index.html">← Vissza</a></h1>
 
     <div class="mode-selector">
         <button id="m-gyak" class="mode-btn active" onclick="setMode('gyak')">Gyakorlás</button>
-        <button id="m-exam" class="mode-btn" onclick="setMode('exam')">Vizsga (5 feladat)</button>
-    </div>
-
-    <div id="theory" class="theory-section">
-        <b>Elmélet:</b> Rugalmatlan ütközésnél a testek összetapadnak ${m1)}${v1} + ${m2}${v2} = (${m1}+{$m2})u$). Szétlökődésnél a kezdő impulzus nulla ($0 = m_1v_1' + m_2v_2'$). Figyelj az irányokra: a szembe jövő vagy hátrafelé mozgó test sebessége <b>negatív</b>!
+        <button id="m-exam" class="mode-btn" onclick="setMode('exam')">Vizsga</button>
     </div>
 
     <div class="nav-menu">
         <button class="nav-btn active" id="btn-inel" onclick="switchCat('inel')">Rugalmatlan</button>
-        <button class="nav-btn" id="btn-elas" onclick="switchCat('elas')">Rugalmas (m1=m2)</button>
+        <button class="nav-btn" id="btn-elas" onclick="switchCat('elas')">Rugalmas</button>
         <button class="nav-btn" id="btn-expl" onclick="switchCat('expl')">Robbanás</button>
-        <button class="nav-btn" id="btn-jump" onclick="switchCat('jump')">Leugrás kocsiról</button>
+        <button class="nav-btn" id="btn-jump" onclick="switchCat('jump')">Leugrás</button>
     </div>
 
     <div class="exercise-area" id="main-area">
@@ -53,43 +51,72 @@
         <div class="input-grid" id="input-fields"></div>
 
         <div id="controls">
-            <button class="action-btn" onclick="checkAnswers()">Ellenőrzés</button>
-            <button id="new-btn" class="action-btn" style="background:#673ab7" onclick="generateTask()">Új feladat</button>
-            <button class="action-btn" style="background:#ff9800" onclick="showDetailedHelp()">Lépésenkénti levezetés</button>
+            <button class="action-btn" id="check-btn" onclick="checkAnswers()">Ellenőrzés</button>
+            <button class="action-btn" style="background:#673ab7" onclick="generateTask(true)">Új feladat</button>
+            <button class="action-btn" style="background:#ff9800" id="sol-btn" onclick="showSolution()">Levezetés</button>
         </div>
 
         <div id="feedback" style="margin-top:15px; font-weight: bold; font-size: 1.2em;"></div>
         <div id="solution-box" class="solution"></div>
+        <div id="stats-display" class="stat-line"></div>
     </div>
 
-    <div id="result-screen" class="result-screen"></div>
+    <div id="grade-display" class="grade-box"></div>
 </div>
 
 <script>
-    let mode = 'gyak', currentCat = 'inel', taskCount = 0, examScores = [];
-    let currentTask = {}, statWrongTries = 0, statSolSeen = 0, statNewTask = 0, helpUsed = false;
+    let appMode = 'gyak', currentCat = 'inel';
+    let examDone = { inel: false, elas: false, expl: false, jump: false };
+    let currentTask = { vals: {}, targetKey: "", help: "" };
+    let seconds = 0, timerInterval;
+    
+    // Statisztika változók
+    let statTries = 0, statNewTasks = 0, statSolSeen = 0;
 
     const labels = {
         m1: "1. test tömege (kg)", v1: "1. test sebessége (m/s)",
         m2: "2. test tömege (kg)", v2: "2. test sebessége (m/s)",
-        u: "Közös sebesség (m/s)", v1p: "1. test sebessége utána (m/s)",
-        v2p: "2. test sebessége utána (m/s)", me: "Ember tömege (kg)",
-        mk: "Kocsi tömege (kg)", vk: "Kocsi sebessége előtte (m/s)"
+        u: "Közös sebesség (m/s)", v1p: "1. test seb. utána (m/s)",
+        v2p: "2. test seb. utána (m/s)", me: "Ember tömege (kg)",
+        mk: "Kocsi tömege (kg)", vk: "Kocsi sebessége (m/s)",
+        vep: "Ember seb. utána (m/s)", vkp: "Kocsi seb. utána (m/s)"
     };
 
+    function fmt(x) { return Number(x).toLocaleString('hu-HU', { maximumFractionDigits: 2 }); }
+
     function setMode(m) {
-        mode = m;
-        document.getElementById('m-gyak').classList.toggle('active', m === 'gyak');
-        document.getElementById('m-exam').classList.toggle('active', m === 'exam');
-        document.getElementById('new-btn').style.display = (m === 'exam' ? 'none' : 'inline-block');
+        appMode = m;
+        document.getElementById('m-gyak').className = 'mode-btn' + (m === 'gyak' ? ' active' : '');
+        document.getElementById('m-exam').className = 'mode-btn' + (m === 'exam' ? ' active' : '');
         resetStats();
+        if(m === 'exam') startTimer(); else stopTimer();
         generateTask();
     }
 
+    function startTimer() { 
+        seconds = 0; 
+        document.getElementById('exam-timer').style.display = 'block'; 
+        clearInterval(timerInterval); 
+        timerInterval = setInterval(() => { 
+            seconds++; 
+            let m = Math.floor(seconds/60).toString().padStart(2,'0'), s = (seconds%60).toString().padStart(2,'0'); 
+            document.getElementById('exam-timer').innerText = `${m}:${s}`; 
+        }, 1000); 
+    }
+    
+    function stopTimer() { clearInterval(timerInterval); document.getElementById('exam-timer').style.display = 'none'; }
+
     function resetStats() {
-        taskCount = 0; examScores = []; statWrongTries = 0; statSolSeen = 0; statNewTask = 0;
-        document.getElementById('result-screen').style.display = 'none';
+        statTries = 0; statNewTasks = 0; statSolSeen = 0;
+        examDone = { inel: false, elas: false, expl: false, jump: false };
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('completed'));
+        document.getElementById('grade-display').style.display = 'none';
         document.getElementById('main-area').style.display = 'block';
+        updateStatUI();
+    }
+
+    function updateStatUI() {
+        document.getElementById('stats-display').innerHTML = `Próbálkozások: ${statTries} | Új feladatok: ${statNewTasks} | Megoldás megtekintve: ${statSolSeen}`;
     }
 
     function switchCat(cat) {
@@ -99,119 +126,130 @@
         generateTask();
     }
 
-    function generateTask() {
-        statNewTask++; helpUsed = false;
+    function generateTask(isManual = false) {
+        if(isManual) statNewTasks++;
         document.getElementById('feedback').innerText = '';
         document.getElementById('solution-box').style.display = 'none';
         
-        let m1, m2, v1, v2, v1p, v2p, u, keys, desc, help;
+        let vals = {}, desc = "", help = "", targetKey = "";
 
         if (currentCat === 'inel') {
-            m1 = r(2, 10); m2 = r(2, 15); v1 = r(3, 10); v2 = Math.random() > 0.5 ? -r(2, 6) : 0;
-            u = (m1 * v1 + m2 * v2) / (m1 + m2);
-            keys = ['m1', 'v1', 'm2', 'v2', 'u'];
-            desc = `Egy ${m1} kg-os test ${v1} m/s-os sebességgel halad. ${v2 === 0 ? 'Nekiütközik egy álló' : 'Szembe jön vele egy'} ${m2} kg-os test (${v2} m/s). Az ütközés rugalmatlan.`;
-            help = `1. Képlet: m1·v1 + m2·v2 = (m1+m2)·u\n2. Behelyettesítés: ${m1}·${v1} + ${m2}·(${v2}) = (${m1}+${m2})·u\n3. Összevonás: ${m1*v1 + m2*v2} = ${m1+m2}·u\n4. Eredmény: u = ${u.toFixed(2)} m/s`;
-            currentTask = { vals: {m1, v1, m2, v2, u}, given: keys.sort(()=>.5-Math.random()).slice(0,4), desc, help };
+            let m1 = Math.floor(Math.random()*8)+2, m2 = Math.floor(Math.random()*10)+2;
+            let v1 = Math.floor(Math.random()*6)+4, v2 = Math.random() > 0.5 ? -Math.floor(Math.random()*3)-1 : 0;
+            let u = (m1 * v1 + m2 * v2) / (m1 + m2);
+            targetKey = 'u';
+            vals = {m1, v1, m2, v2, u};
+            desc = `Egy ${m1} kg-os test ${v1} m/s sebességgel halad. ${v2 === 0 ? 'Nekiütközik egy álló' : 'Szembe jön vele egy'} ${m2} kg-os test ${v2 !== 0 ? '('+v2+' m/s)' : ''}. Összetapadnak. Mekkora a közös sebességük?`;
+            help = `Képlet: m1·v1 + m2·v2 = (m1+m2)·u\n${m1}·${v1} + ${m2}·(${v2}) = ${m1+m2}·u\nu = ${fmt(u)} m/s`;
         } 
+        else if (currentCat === 'elas') {
+            let m = Math.floor(Math.random()*5)+2, v1 = Math.floor(Math.random()*8)+5;
+            targetKey = 'v2p';
+            vals = {m1: m, m2: m, v1, v2: 0, v1p: 0, v2p: v1};
+            desc = `Két azonos tömegű (${m} kg) golyó ütközik rugalmasan. Az első ${v1} m/s-al halad, a második áll. Az első megáll. Mennyi a második sebessége?`;
+            help = `Rugalmas ütközésnél azonos tömegek esetén sebességcsere történik.\nv2' = ${v1} m/s`;
+        }
         else if (currentCat === 'expl') {
-            m1 = r(2, 5); m2 = r(6, 12); v1p = r(4, 10); v2p = -(m1 * v1p) / m2;
-            keys = ['m1', 'm2', 'v1p', 'v2p'];
-            desc = `Két, kezdetben álló kiskocsi közé szorított rugó szétlöki a testeket. Az ${m1} kg-os kocsi ${v1p} m/s sebességgel indul el jobbra. Mennyi a másik kocsi sebessége?`;
-            help = `1. Képlet: 0 = m1·v1' + m2·v2'\n2. Behelyettesítés: 0 = ${m1}·${v1p} + ${m2}·v2'\n3. Átrendezés: ${-m1*v1p} = ${m2}·v2'\n4. Eredmény: v2' = ${v2p.toFixed(2)} m/s`;
-            currentTask = { vals: {m1, m2, v1p, v2p}, given: keys.sort(()=>.5-Math.random()).slice(0,3), desc, help };
+            let m1 = Math.floor(Math.random()*3)+2, m2 = Math.floor(Math.random()*5)+5;
+            let v1p = Math.floor(Math.random()*6)+4, v2p = -(m1 * v1p) / m2;
+            targetKey = 'v2p';
+            vals = {m1, m2, v1p, v2p};
+            desc = `Egy álló ${m1} kg-os és egy ${m2} kg-os kocsit szétlök egy rugó. Az első kocsi sebessége ${v1p} m/s lesz. Mennyi a másodiké?`;
+            help = `0 = m1·v1' + m2·v2'\n0 = ${m1}·${v1p} + ${m2}·v2'\nv2' = ${fmt(v2p)} m/s`;
         }
         else if (currentCat === 'jump') {
-            let me = 60, mk = 140, vk = r(2, 5), vep = r(6, 10);
+            let me = 60, mk = 140, vk = Math.floor(Math.random()*3)+2, vep = Math.floor(Math.random()*5)+6;
             let vkp = ((me+mk)*vk - me*vep)/mk;
-            keys = ['me', 'mk', 'vk', 'vep', 'vkp'];
-            desc = `Egy ${me} kg-os ember egy ${mk} kg-os kocsival halad közösen ${vk} m/s-al. Az ember leugrik előre ${vep} m/s sebességgel (a talajhoz képest). Mennyi a kocsi új sebessége?`;
-            help = `1. Képlet: (me+mk)·vk = me·vep + mk·vkp\n2. Behelyettesítés: (${me}+${mk})·${vk} = ${me}·${vep} + ${mk}·vkp\n3. Összevonás: ${(me+mk)*vk} = ${me*vep} + ${mk}·vkp\n4. Eredmény: vkp = ${vkp.toFixed(2)} m/s`;
-            currentTask = { vals: {me, mk, vk, vep, vkp}, given: keys.sort(()=>.5-Math.random()).slice(0,4), desc, help };
+            targetKey = 'vkp';
+            vals = {me, mk, vk, vep, vkp};
+            desc = `Az ember (${me} kg) és a kocsi (${mk} kg) ${vk} m/s-al halad. Az ember leugrik előre ${vep} m/s-al. Mennyi a kocsi új sebessége?`;
+            help = `(me+mk)·vk = me·ve' + mk·vk'\n${me+mk}·${vk} = ${me}·${vep} + ${mk}·vk'\nvk' = ${fmt(vkp)} m/s`;
         }
-        else { // Elas
-            m1 = r(2,10); v1 = r(5,10); v2 = 0;
-            currentTask = { vals: {m1, m2:m1, v1, v2, v1p:0, v2p:v1}, given: ['m1','v1'], 
-                desc: `Rugalmas ütközés: két azonos (${m1} kg) tömegű golyó ütközik. Az egyik ${v1} m/s-al halad, a másik áll.`,
-                help: `Azonos tömegű rugalmas ütközésnél a testek sebességet cserélnek!\nv1' = v2 = 0\nv2' = v1 = ${v1}` };
-        }
-        renderFields();
+
+        currentTask = { vals, targetKey, help };
+        document.getElementById('task-desc').innerText = desc;
+        renderInputs();
+        updateStatUI();
     }
 
-    function r(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-
-    function renderFields() {
-        const container = document.getElementById('input-fields');
-        container.innerHTML = '';
-        document.getElementById('task-desc').innerHTML = currentTask.desc;
-        Object.keys(currentTask.vals).forEach(k => {
-            let isGiven = currentTask.given.includes(k);
-            container.innerHTML += `<div class="input-group"><label><b>${labels[k] || k}:</b></label><br>
-                ${isGiven ? `<span class="given">${currentTask.vals[k].toFixed(1)}</span>` : `<input type="number" step="0.1" id="in-${k}">`}</div>`;
+    function renderInputs() {
+        const cont = document.getElementById('input-fields');
+        cont.innerHTML = "";
+        Object.keys(currentTask.vals).forEach(key => {
+            let div = document.createElement('div');
+            div.className = "input-group";
+            let label = document.createElement('span');
+            label.innerText = labels[key] || key;
+            
+            if (key === currentTask.targetKey) {
+                let inp = document.createElement('input');
+                inp.type = "number"; inp.id = "user-ans"; inp.placeholder = "?";
+                div.appendChild(label); div.appendChild(inp);
+            } else {
+                let valBox = document.createElement('span');
+                valBox.className = "given-val";
+                valBox.innerText = currentTask.vals[key];
+                div.appendChild(label); div.appendChild(valBox);
+            }
+            cont.appendChild(div);
         });
-    }
-
-    function showDetailedHelp() {
-        statSolSeen++; helpUsed = true;
-        const box = document.getElementById('solution-box');
-        box.innerHTML = "<b>Lépésenkénti megoldás:</b><br>" + currentTask.help.replace(/\n/g, '<br>');
-        box.style.display = 'block';
     }
 
     function checkAnswers() {
-        let ok = true;
-        Object.keys(currentTask.vals).forEach(k => {
-            if (!currentTask.given.includes(k)) {
-                let val = parseFloat(document.getElementById(`in-${k}`).value);
-                if (isNaN(val) || Math.abs(val - currentTask.vals[k]) > 0.2) ok = false;
-            }
-        });
+        statTries++;
+        const userVal = parseFloat(document.getElementById('user-ans').value.replace(',', '.'));
+        const correctVal = currentTask.vals[currentTask.targetKey];
+        const feedback = document.getElementById('feedback');
 
-        const fb = document.getElementById('feedback');
-        if (ok) {
-            fb.innerHTML = "✅ Kiváló megoldás!"; fb.style.color = "green";
-            if (mode === 'exam') {
-                examScores.push(helpUsed ? 0.5 : 1);
-                taskCount++;
-                if (taskCount < 5) setTimeout(generateTask, 1000); else showFinal();
+        if (Math.abs(userVal - correctVal) < 0.1) {
+            feedback.innerText = "✅ Helyes!";
+            feedback.style.color = "green";
+            if (appMode === 'exam') {
+                examDone[currentCat] = true;
+                document.getElementById('btn-' + currentCat).classList.add('completed');
+                setTimeout(autoNext, 1000);
             }
         } else {
-            statWrongTries++;
-            fb.innerHTML = "❌ Hiba a számításban!"; fb.style.color = "red";
+            feedback.innerText = "❌ Hibás számítás!";
+            feedback.style.color = "red";
         }
+        updateStatUI();
     }
 
-    function saveJPG() {
-        let total = examScores.reduce((a,b)=>a+b, 0);
-        let grade = total >= 4.5 ? 5 : total >= 3.5 ? 4 : total >= 2.5 ? 3 : 2;
-        const c = document.createElement('canvas'); const ctx = c.getContext('2d');
-        c.width = 600; c.height = 500;
-        ctx.fillStyle = '#fff'; ctx.fillRect(0,0,600,500);
-        ctx.strokeStyle = '#1a237e'; ctx.lineWidth = 10; ctx.strokeRect(5,5,590,490);
-        ctx.fillStyle = '#1a237e'; ctx.textAlign = 'center'; ctx.font = 'bold 30px Arial'; ctx.fillText('BIZONYÍTVÁNY', 300, 70);
-        ctx.font = '20px Arial'; ctx.fillText('Impulzusmegmaradás Vizsga', 300, 120);
-        ctx.textAlign = 'left'; ctx.font = '16px Arial'; ctx.fillStyle = '#333';
-        ctx.fillText(`- Plusz feladatok: ${statNewTask - (mode==='exam'?5:0)}`, 150, 200);
-        ctx.fillText(`- Súgó használat: ${statSolSeen} alkalommal`, 150, 240);
-        ctx.fillText(`- Hibás válaszok: ${statWrongTries}`, 150, 280);
-        ctx.textAlign = 'center'; ctx.font = 'bold 80px Arial'; ctx.fillText(`JEGY: ${grade}`, 300, 420);
-        const l = document.createElement('a'); l.download = 'impulzus_vizsga.jpg'; l.href = c.toDataURL('image/jpeg'); l.click();
+    function autoNext() {
+        const cats = Object.keys(examDone);
+        const nextIdx = cats.indexOf(currentCat) + 1;
+        if (nextIdx < cats.length) switchCat(cats[nextIdx]);
+        else finishExam();
     }
 
-    function showFinal() {
+    function finishExam() {
+        stopTimer();
         document.getElementById('main-area').style.display = 'none';
-        const res = document.getElementById('result-screen');
-        res.style.display = 'block';
-        let total = examScores.reduce((a,b)=>a+b, 0);
-        res.innerHTML = `<h2>Vizsga vége!</h2><h1 style="font-size:4em;">Pontszám: ${total}/5</h1>
-            <p>Súgóhasználat: ${statSolSeen} | Hibák: ${statWrongTries}</p>
-            <button class="action-btn" onclick="saveJPG()">Eredmény mentése (JPG)</button>
-            <button class="action-btn" style="background:#f44336" onclick="location.reload()">Új vizsga</button>`;
+        const gBox = document.getElementById('grade-display');
+        gBox.style.display = 'block';
+        
+        let score = Object.values(examDone).filter(v => v).length;
+        let grade = (statTries < 6 && statSolSeen === 0) ? 5 : (statTries < 8) ? 4 : 3;
+
+        gBox.innerHTML = `
+            <h2>Vizsga bizonyítvány</h2>
+            <p>Idő: ${document.getElementById('exam-timer').innerText}</p>
+            <p>Próbálkozások: ${statTries} | Segítség: ${statSolSeen}</p>
+            <h1 style="font-size:3em;">Jegy: ${grade}</h1>
+            <button class="action-btn" onclick="window.print()">Eredmény mentése (PDF/Nyomtatás)</button>
+            <button class="action-btn" style="background:#607d8b" onclick="location.reload()">Új vizsga</button>
+        `;
+    }
+
+    function showSolution() {
+        statSolSeen++;
+        document.getElementById('solution-box').innerText = currentTask.help;
+        document.getElementById('solution-box').style.display = 'block';
+        updateStatUI();
     }
 
     generateTask();
 </script>
 </body>
 </html>
-
-
