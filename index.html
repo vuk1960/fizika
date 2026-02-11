@@ -7,49 +7,92 @@
     <style>
         body { font-family: sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f4f4f4; }
 
-        /* FEJLÉC – SZÖVEG BALRA, LOGÓ JOBBRA */
+        /* FEJLÉC */
         header {
             background: #333;
             color: #fff;
             padding: 1rem;
-            /* a lényeg: egysorban, balra szöveg, jobbra logó */
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
         }
-        .header-text {
+        .header-text { text-align: left; }
+        .header-text h1 { margin: 0 0 0.25rem 0; font-size: 1.8rem; }
+        .header-text p { margin: 0; font-size: 0.95rem; opacity: 0.9; }
+        .header-logo { height: 64px; width: auto; display: block; object-fit: contain; }
+
+        /* NAVIGÁCIÓ ÉS DROPDOWN */
+        nav { 
+            background: #444; 
+            padding: 0; 
+            text-align: center; 
+            display: flex; 
+            justify-content: center; 
+        }
+
+        /* Menüpontok alapstílusa */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        nav a, .dropbtn {
+            display: block;
+            color: white;
+            padding: 14px 20px;
+            text-decoration: none;
+            font-weight: bold;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 16px;
+        }
+
+        nav a:hover, .dropdown:hover .dropbtn {
+            background-color: #555;
+            color: #ff9900;
+        }
+
+        /* A legördülő tartalom elrejtése alaphelyzetben */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
             text-align: left;
         }
-        .header-text h1 {
-            margin: 0 0 0.25rem 0;
-            font-size: 1.8rem;
-        }
-        .header-text p {
-            margin: 0;
-            font-size: 0.95rem;
-            opacity: 0.9;
-        }
-        /* Logó méretezése – kisméretű, jobbra igazítva */
-        .header-logo {
-            height: 64px;           /* állítsd igény szerint: 36–64px jó logónak */
-            width: auto;
+
+        /* Linkek a legördülő menüben */
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
             display: block;
-            object-fit: contain;
-            filter: none;           /* sötét háttéren jó kontrasztú logó esetén így oké */
+            font-weight: normal;
         }
 
-        /* NAV és TÖRZS marad az eredeti szerint */
-        nav { background: #444; padding: 0.5rem; text-align: center; }
-        nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
-        nav a:hover { color: #ff9900; }
-        .container { padding: 20px; max-width: 800px; margin: auto; background: white; min-height: 400px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .dropdown-content a:hover {
+            background-color: #ddd;
+            color: #333;
+        }
+
+        /* Megjelenítés lebegtetéskor (hover) */
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* TARTALOM */
+        .container { padding: 20px; max-width: 800px; margin: 20px auto; background: white; min-height: 400px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         footer { text-align: center; padding: 20px; font-size: 0.8rem; color: #666; }
 
-        /* Reszponzív finomhangolás: keskeny kijelzőn logó kisebb, sor megtartható */
         @media (max-width: 480px) {
             .header-logo { height: 40px; }
             .header-text h1 { font-size: 1.5rem; }
+            nav { flex-direction: column; }
         }
     </style>
 </head>
@@ -60,27 +103,55 @@
         <h1>Fizika világa</h1>
         <p>Segédlet a 7. A osztály diákjainak</p>
     </div>
-    <!-- IDE TÖLTSD BE A LOGÓT: cseréld az útvonalat a sajátodra -->
     <img class="header-logo" src="fejlec.jpg" alt="Fizika logó">
 </header>
 
 <nav>
-    <a href="kinematika.html">Kinematika</a>
-    <a href="dinamika.html">Dinamika</a>
-    <a href="mechanika_osszefoglalo.html">Összefoglaló feladatok</a>
-    <a href="impulzus.html">Impulzus</a>
+    <!-- MECHANIKA DROPDOWN -->
+    <div class="dropdown">
+        <button class="dropbtn">Mechanika ▼</button>
+        <div class="dropdown-content">
+            <a href="kinematika.html">Kinematika</a>
+            <a href="dinamika.html">Dinamika</a>
+            <a href="impulzus.html">Impulzus</a>
+            <a href="mechanika_osszefoglalo.html">Összefoglaló feladatok</a>
+        </div>
+    </div>
+
+    <!-- ÜRES DROPDOWN-OK A JÖVŐNEK -->
+    <div class="dropdown">
+        <button class="dropbtn">Hőtan ▼</button>
+        <div class="dropdown-content">
+            <a href="#">Itt lesz majd a Hőtan</a>
+        </div>
+    </div>
+
+    <div class="dropdown">
+        <button class="dropbtn">Elektromosság ▼</button>
+        <div class="dropdown-content">
+            <a href="#">Itt lesz majd az Elektromosság</a>
+        </div>
+    </div>
+
+    <div class="dropdown">
+        <button class="dropbtn">Optika ▼</button>
+        <div class="dropdown-content">
+            <a href="#">Itt lesz majd az Optika</a>
+        </div>
+    </div>
 </nav>
 
 <div class="container">
     <h2>Üdvözöllek a fizika portálon!</h2>
     <p>Válassz egy témakört a fenti menüből a tanuláshoz.</p>
     
-    <h3>Témakörök leírása:</h3>
+    <hr>
+    
+    <h3>Aktuális témakör: Mechanika</h3>
     <ul>
-        <li><strong>Kinematika:</strong> A mozgások leírása (út, idő, sebesség) anélkül, hogy a mozgást okozó erőkkel foglalkoznánk.</li>
-        <li><strong>Dinamika:</strong> A testek mozgása és az azt okozó hatások (erő, tömeg, Newton-törvények).</li>
-        <li><strong>Összefoglaló:</strong> A testek mozgása az azt okozó erők hatására.</li>
-        <li><strong>Impulzus:</strong> A testek impulzusának megmaradása ütközések során.</li>
+        <li><strong>Kinematika:</strong> A mozgások leírása (út, idő, sebesség).</li>
+        <li><strong>Dinamika:</strong> A testek mozgása és az azt okozó hatások (erő, tömeg).</li>
+        <li><strong>Impulzus:</strong> A mozgásmennyiség és megmaradási törvények.</li>
     </ul>
 </div>
 
@@ -90,6 +161,3 @@
 
 </body>
 </html>
-
-
-
