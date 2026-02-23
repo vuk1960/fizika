@@ -35,9 +35,12 @@ st.sidebar.markdown("---")
 # FIZIKAI PARAMÉTEREK BEVITEL (Csúszka + Számmező szinkron)
 def sync_input(label, key_base, min_val, max_val, step, format):
     st.sidebar.write(f"**{label}**")
-    val_sl = st.sidebar.slider(f"{label} csúszka", min_val, max_val, float(st.session_state[key_base]), step, label_visibility="collapsed", key=f"{key_base}_slider")
+    val_sl = st.sidebar.slider(f"{label} csúszka", min_val, max_val, float(st.session_state[key_base if key_base != 'P_105' else 'P_val_only']), step, label_visibility="collapsed", key=f"{key_base}_slider")
     val_num = st.sidebar.number_input(f"{label} mező", min_val, max_val, val_sl, step, format=format, label_visibility="collapsed", key=f"{key_base}_num")
     return val_num
+
+# Segédváltozó a nyomás csúszkához
+st.session_state['P_val_only'] = st.session_state.P / 1e5
 
 new_n = st.sidebar.number_input("n [mol]", 0.1, 5.0, float(st.session_state.n), 0.1)
 v_val = sync_input("V [m³]", "V", V_MIN, V_MAX, 0.001, "%.4f")
@@ -84,14 +87,13 @@ if st.sidebar.button("🗑️ Grafikon törlése"):
     st.session_state.history = {'V': [st.session_state.V], 'P': [st.session_state.P], 'T': [st.session_state.T]}
     st.rerun()
 
-# --- VIZUALIZÁCIÓ (Kisebb méretben) ---
+# --- VIZUALIZÁCIÓ ---
 st.title("🌡️ Gáz Állapotváltozás Szimulátor")
 c1, c2, c3 = st.columns(3)
 c1.metric("V [m³]", f"{st.session_state.V:.4f}")
 c2.metric("p [10⁵ Pa]", f"{st.session_state.P/1e5:.2f}")
 c3.metric("T [K]", f"{st.session_state.T:.1f}")
 
-# Grafikonok kisebb figsize-szal
 fig, axes = plt.subplots(2, 2, figsize=(10, 7))
 (ax_pv, ax_vt), (ax_pt, ax_pist) = axes
 h = st.session_state.history
@@ -102,18 +104,18 @@ def plot_it(ax, x, y, xl, yl, title, xlim, ylim, sc_y=1):
     ax.set_xlabel(xl, fontsize=8); ax.set_ylabel(yl, fontsize=8)
     ax.set_title(title, fontsize=10, fontweight='bold')
     ax.set_xlim(xlim); ax.set_ylim(ylim); ax.grid(True, ls=':', alpha=0.4)
-    ax.tick_params(labelsize=7)
 
 plot_it(ax_pv, h['V'], h['P'], "V [m³]", "p [10⁵ Pa]", "p-V diagram", (V_MIN, V_MAX), (P_MIN_PA/1e5, P_MAX_PA/1e5), sc_y=1/1e5)
 plot_it(ax_vt, h['T'], h['V'], "T [K]", "V [m³]", "V-T diagram", (T_MIN, T_MAX), (V_MIN, V_MAX))
 plot_it(ax_pt, h['T'], h['P'], "T [K]", "p [10⁵ Pa]", "p-T diagram", (T_MIN, T_MAX), (P_MIN_PA/1e5, P_MAX_PA/1e5), sc_y=1/1e5)
 
-# Dugattyú rajzolása
+# --- JAVÍTOTT DUGATTYÚ GRAFIKA ---
 ax_pist.set_xlim(0, 0.08); ax_pist.set_ylim(-0.02, 0.02); ax_pist.axis('off')
 ax_pist.plot([0, 0.06, 0.06, 0], [0.015, 0.015, -0.015, -0.015], 'k-', lw=2)
 ax_pist.add_patch(plt.Rectangle((0, -0.015), st.session_state.V, 0.03, color='skyblue', alpha=0.4))
 ax_pist.axvline(st.session_state.V, ymin=0.3, ymax=0.7, color='black', lw=4)
-ax_pist.plot([st.session_state.V, st.session_state.V + 0.025],, color='gray', lw=6)
+# JAVÍTOTT SOR: hozzáadva az y-tengely koordináta listája [0, 0]
+ax_pist.plot([st.session_state.V, st.session_state.V + 0.025], [0, 0], color='gray', lw=6)
 ax_pist.plot([0.07, 0.07], [-0.01, 0.01], 'k-', lw=1.5)
 ax_pist.plot([0.07, 0.07], [-0.01, (st.session_state.T/T_MAX)*0.02 - 0.01], 'r-', lw=6)
 
