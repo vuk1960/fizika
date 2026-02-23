@@ -34,65 +34,81 @@ new_n = st.sidebar.number_input("n [mol]", 0.1, 5.0, float(st.session_state.n), 
 
 st.sidebar.markdown("---")
 
-# Csúszkák és számmezők (Egymás alatt, de logikai kapcsolatban)
-v_sl = st.sidebar.slider("V [m³]", V_MIN, V_MAX, float(st.session_state.V), 0.001)
-p_sl_105 = st.sidebar.slider("p [10⁵ Pa]", P_MIN_PA/1e5, P_MAX_PA/1e5, float(st.session_state.P/1e5), 0.1)
-t_sl = st.sidebar.slider("T [K]", T_MIN, T_MAX, float(st.session_state.T), 1.0)
+# Csúszkák - a key paraméterrel azonosítjuk őket
+v_val = st.sidebar.slider("V [m³]", V_MIN, V_MAX, float(st.session_state.V), 0.001, key="v_slider")
+p_val_105 = st.sidebar.slider("p [10⁵ Pa]", P_MIN_PA/1e5, P_MAX_PA/1e5, float(st.session_state.P/1e5), 0.1, key="p_slider")
+t_val = st.sidebar.slider("T [K]", T_MIN, T_MAX, float(st.session_state.T), 1.0, key="t_slider")
 
-# Értékek kinyerése
-temp_V = v_sl
-temp_P_Pa = p_sl_105 * 1e5
-temp_T = t_sl
-
-# --- RAJZOLÁSI LOGIKA ---
+# --- ÚJ LOGIKA: KI VÁLTOZOTT? ---
+temp_V, temp_P, temp_T = st.session_state.V, st.session_state.P, st.session_state.T
 is_drawing = True
 
-# Ha n változik, töröljük a múltat
-if not np.isclose(new_n, st.session_state.n):
-    st.session_state.n = new_n
-    is_drawing = False
+# Ellenőrizzük, melyik csúszka mozdult el a memóriához képest
+v_changed = not np.isclose(v_val, st.session_state.V)
+p_changed = not np.isclose(p_val_105 * 1e5, st.session_state.P)
+t_changed = not np.isclose(t_val, st.session_state.T)
 
 if mode == 'Izobár (p állandó)':
-    # Ha a nyomást állítod (alappont), ne rajzoljon
-    if not np.isclose(temp_P_Pa, st.session_state.P):
+    if p_changed: # Ha a fix értéket bántjuk, alappontot váltunk
+        temp_P = p_val_105 * 1e5
+        temp_V = v_val
+        temp_T = np.clip(calc_T(temp_P, temp_V, new_n), T_MIN, T_MAX)
         is_drawing = False
-    temp_T = np.clip(calc_T(temp_P_Pa, temp_V, st.session_state.n), T_MIN, T_MAX)
-    
+    elif v_changed: # V-vel rajzolunk
+        temp_V = v_val
+        temp_T = np.clip(calc_T(temp_P, temp_V, new_n), T_MIN, T_MAX)
+    elif t_changed: # T-vel rajzolunk
+        temp_T = t_val
+        temp_V = np.clip(calc_V(temp_P, temp_T, new_n), V_MIN, V_MAX)
+
 elif mode == 'Izoterm (T állandó)':
-    # Ha a hőmérsékletet állítod, ne rajzoljon
-    if not np.isclose(temp_T, st.session_state.T):
+    if t_changed:
+        temp_T = t_val
+        temp_V = v_val
+        temp_P = np.clip(calc_P(temp_V, temp_T, new_n), P_MIN_PA, P_MAX_PA)
         is_drawing = False
-    temp_P_Pa = np.clip(calc_P(temp_V, temp_T, st.session_state.n), P_MIN_PA, P_MAX_PA)
+    elif v_changed:
+        temp_V = v_val
+        temp_P = np.clip(calc_P(temp_V, temp_T, new_n), P_MIN_PA, P_MAX_PA)
+    elif p_changed:
+        temp_P = p_val_105 * 1e5
+        temp_V = np.clip(calc_V(temp_P, temp_T, new_n), V_MIN, V_MAX)
 
 elif mode == 'Izochor (V állandó)':
-    # Ha a térfogatot állítod, ne rajzoljon
-    if not np.isclose(temp_V, st.session_state.V):
+    if v_changed:
+        temp_V = v_val
+        temp_T = t_val
+        temp_P = np.clip(calc_P(temp_V, temp_T, new_n), P_MIN_PA, P_MAX_PA)
         is_drawing = False
-    temp_P_Pa = np.clip(calc_P(temp_V, temp_T, st.session_state.n), P_MIN_PA, P_MAX_PA)
+    elif t_changed:
+        temp_T = t_val
+        temp_P = np.clip(calc_P(temp_V, temp_T, new_n), P_MIN_PA, P_MAX_PA)
+    elif p_changed:
+        temp_P = p_val_105 * 1e5
+        temp_T = np.clip(calc_T(temp_P, temp_V, new_n), T_MIN, T_MAX)
 
 else: # Szabad mód
-    temp_P_Pa = np.clip(calc_P(temp_V, temp_T, st.session_state.n), P_MIN_PA, P_MAX_PA)
+    if v_changed: temp_V = v_val; temp_P = calc_P(temp_V, temp_T, new_n)
+    elif t_changed: temp_T = t_val; temp_P = calc_P(temp_V, temp_T, new_n)
+    elif p_changed: temp_P = p_val_105 * 1e5; temp_T = calc_T(temp_P, temp_V, new_n)
 
-# --- ÁLLAPOT FRISSÍTÉSE ---
-if not np.isclose(temp_V, st.session_state.V) or not np.isclose(temp_P_Pa, st.session_state.P) or not np.isclose(temp_T, st.session_state.T):
-    if not is_drawing:
-        # Alappont váltás: új lista indítása
-        st.session_state.history = {'V': [temp_V], 'P': [temp_P_Pa], 'T': [temp_T]}
+# --- ÁLLAPOT MENTÉSE ---
+if v_changed or p_changed or t_changed or new_n != st.session_state.n:
+    st.session_state.n = new_n
+    if not is_drawing or new_n != st.session_state.n:
+        st.session_state.history = {'V': [temp_V], 'P': [temp_P], 'T': [temp_T]}
     else:
-        # Folyamat rajzolása: pontok hozzáadása
         st.session_state.history['V'].append(temp_V)
-        st.session_state.history['P'].append(temp_P_Pa)
+        st.session_state.history['P'].append(temp_P)
         st.session_state.history['T'].append(temp_T)
     
-    st.session_state.V = temp_V
-    st.session_state.P = temp_P_Pa
-    st.session_state.T = temp_T
+    st.session_state.V, st.session_state.P, st.session_state.T = temp_V, temp_P, temp_T
 
 if st.sidebar.button("🗑️ Grafikon törlése"):
     st.session_state.history = {'V': [st.session_state.V], 'P': [st.session_state.P], 'T': [st.session_state.T]}
     st.rerun()
 
-# --- MEGJELENÍTÉS ---
+# --- VIZUALIZÁCIÓ ---
 st.title("🌡️ Gáz Állapotváltozás Szimulátor")
 c1, c2, c3 = st.columns(3)
 c1.metric("Térfogat (V)", f"{st.session_state.V:.4f} m³")
@@ -103,17 +119,17 @@ fig, axes = plt.subplots(2, 2, figsize=(12, 9))
 (ax_pv, ax_vt), (ax_pt, ax_pist) = axes
 h = st.session_state.history
 
-def plot_it(ax, x, y, xl, yl, title, xlim, ylim, scale_x=1, scale_y=1):
-    ax.plot(np.array(x)*scale_x, np.array(y)*scale_y, 'b-', alpha=0.6, lw=2.5)
-    ax.plot(x[-1]*scale_x, y[-1]*scale_y, 'ro', markersize=8)
+def plot_it(ax, x, y, xl, yl, title, xlim, ylim, sc_x=1, sc_y=1):
+    ax.plot(np.array(x)*sc_x, np.array(y)*sc_y, 'b-', alpha=0.6, lw=2.5)
+    ax.plot(x[-1]*sc_x, y[-1]*sc_y, 'ro', markersize=8)
     ax.set_xlabel(xl); ax.set_ylabel(yl); ax.set_title(title, fontweight='bold')
     ax.set_xlim(xlim); ax.set_ylim(ylim); ax.grid(True, ls=':', alpha=0.6)
 
-plot_it(ax_pv, h['V'], h['P'], "V [m³]", "p [10⁵ Pa]", "p-V diagram", (V_MIN, V_MAX), (P_MIN_PA/1e5, P_MAX_PA/1e5), scale_y=1/1e5)
+plot_it(ax_pv, h['V'], h['P'], "V [m³]", "p [10⁵ Pa]", "p-V diagram", (V_MIN, V_MAX), (P_MIN_PA/1e5, P_MAX_PA/1e5), sc_y=1/1e5)
 plot_it(ax_vt, h['T'], h['V'], "T [K]", "V [m³]", "V-T diagram", (T_MIN, T_MAX), (V_MIN, V_MAX))
-plot_it(ax_pt, h['T'], h['P'], "T [K]", "p [10⁵ Pa]", "p-T diagram", (T_MIN, T_MAX), (P_MIN_PA/1e5, P_MAX_PA/1e5), scale_y=1/1e5)
+plot_it(ax_pt, h['T'], h['P'], "T [K]", "p [10⁵ Pa]", "p-T diagram", (T_MIN, T_MAX), (P_MIN_PA/1e5, P_MAX_PA/1e5), sc_y=1/1e5)
 
-# --- DUGATTYÚ GRAFIKA ---
+# Dugattyú rajzolása
 ax_pist.set_xlim(0, 0.08); ax_pist.set_ylim(-0.02, 0.02); ax_pist.axis('off')
 ax_pist.plot([0, 0.06, 0.06, 0], [0.015, 0.015, -0.015, -0.015], 'k-', lw=3)
 ax_pist.add_patch(plt.Rectangle((0, -0.015), st.session_state.V, 0.03, color='skyblue', alpha=0.4))
