@@ -65,7 +65,9 @@
 
 <script>
     let appMode = 'gyak', currentCat = 'dyn1', currentTasks = [], fullSteps = "", solSeen = false;
-    let examScore = { dyn1: 0, dyn2: 0, dyn3: 0, fric: 0, spring: 0 }, examDone = { dyn1: false, dyn2: false, dyn3: false, fric: false, spring: false };
+    // Frissített pontozási és állapot rendszer 5 kategóriához
+    let examScore = { dyn1: 0, dyn2: 0, dyn3: 0, fric: 0, spring: 0 };
+    let examDone = { dyn1: false, dyn2: false, dyn3: false, fric: false, spring: false };
     let seconds = 0, timerInterval;
 
     const theoryData = {
@@ -198,43 +200,71 @@
         }
     }
 
-    function checkAnswers() {
-        let allCorrect = true;
-        currentTasks.forEach((t, i) => {
-            const val = parseFloat(document.getElementById(`ans-${i}`).value);
-            if (isNaN(val) || Math.abs(val - t.ans) > 0.02) allCorrect = false;
-        });
-
-        const feedback = document.getElementById('feedback');
-        if (allCorrect) {
-            feedback.innerHTML = "✅ Helyes!"; feedback.style.color = "#4caf50";
-            if (appMode === 'felel' && !examDone[currentCat]) {
-                examScore[currentCat] = solSeen ? 0 : 1;
-                examDone[currentCat] = true;
-                document.getElementById('btn-' + currentCat).classList.add('completed');
-                checkExamEnd();
-            }
-        } else {
-            feedback.innerHTML = "❌ Nem jó, próbáld újra!"; feedback.style.color = "#f44336";
-        }
-    }
-
+    
     function showSolution() {
         solSeen = true;
         const box = document.getElementById('solution-box');
         box.innerHTML = `<b>Megoldás:</b><br>${fullSteps}`;
         box.style.display = 'block';
     }
+function checkAnswers() {
+        let allCorrect = true;
+        currentTasks.forEach((t, i) => {
+            const val = parseFloat(document.getElementById(`ans-${i}`).value);
+            // Megengedőbb kerekítés (0.02), hogy a tizedesek ne okozzanak gondot
+            if (isNaN(val) || Math.abs(val - t.ans) > 0.02) allCorrect = false;
+        });
 
-    function checkExamEnd() {
-        if (Object.values(examDone).every(v => v === true)) {
-            stopTimer();
-            const total = Object.values(examScore).reduce((a, b) => a + b, 0);
-            const display = document.getElementById('grade-display');
-            display.style.display = 'block';
-            display.innerHTML = `<h2>Felelés vége!</h2><p>Pontszám: 5/${total}</p><h1>Jegy: ${total === 5 ? 5 : total === 4 ? 4 : total === 3 ? 3 : total === 2 ? 2 : 1}</h1>`;
+        const feedback = document.getElementById('feedback');
+        if (allCorrect) {
+            feedback.innerHTML = "✅ Helyes válasz!";
+            feedback.style.color = "#4caf50";
+            
+            // Felelés mód logikája
+            if (appMode === 'felel' && !examDone[currentCat]) {
+                // Csak akkor kap pontot, ha nem nézte meg a megoldást
+                examScore[currentCat] = solSeen ? 0 : 1;
+                examDone[currentCat] = true;
+                document.getElementById('btn-' + currentCat).classList.add('completed');
+                
+                // Minden ellenőrzésnél megnézzük, vége van-e a felelésnek
+                checkExamEnd();
+            }
+        } else {
+            feedback.innerHTML = "❌ Nem jó, próbáld újra!";
+            feedback.style.color = "#f44336";
         }
     }
+    function checkExamEnd() {
+        // Megszámoljuk, hány kategória kész (összesen 5-nek kell lennie)
+        const completedCount = Object.values(examDone).filter(v => v === true).length;
+        
+        if (completedCount === 5) {
+            stopTimer();
+            const totalPoints = Object.values(examScore).reduce((a, b) => a + b, 0);
+            
+            // Jegyszámítás 1-5 skálán
+            let grade = 1;
+            if (totalPoints === 5) grade = 5;
+            else if (totalPoints === 4) grade = 4;
+            else if (totalPoints === 3) grade = 3;
+            else if (totalPoints === 2) grade = 2;
+            else grade = 1;
+
+            const display = document.getElementById('grade-display');
+            display.style.display = 'block';
+            display.innerHTML = `
+                <h2 style="color: #1a237e;">Felelés vége!</h2>
+                <p style="font-size: 1.2em;">Sikeresen teljesítetted mind az 5 témakört.</p>
+                <div style="font-size: 2em; margin: 15px 0;">Szerzett pont: <b>${totalPoints}</b> / 5</div>
+                <h1 style="font-size: 3em; color: #d32f2f;">Érdemjegy: ${grade}</h1>
+                <p>Időtartam: ${document.getElementById('exam-timer').innerText}</p>
+                <button class="action-btn" onclick="location.reload()">Új felelés indítása</button>
+            `;
+            
+            // Görgetés az eredményhez
+            display.scrollIntoView({ behavior: 'smooth' });
 </script>
 </body>
 </html>
+
