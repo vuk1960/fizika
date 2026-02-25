@@ -65,17 +65,16 @@
 
 <script>
     let appMode = 'gyak', currentCat = 'dyn1', currentTasks = [], fullSteps = "", solSeen = false;
-    // Frissített pontozási és állapot rendszer 5 kategóriához
     let examScore = { dyn1: 0, dyn2: 0, dyn3: 0, fric: 0, spring: 0 };
     let examDone = { dyn1: false, dyn2: false, dyn3: false, fric: false, spring: false };
     let seconds = 0, timerInterval;
 
     const theoryData = {
-        dyn1: "<b>Newton I. törvénye:</b> Ha a testre ható erők eredője nulla, a test nyugalomban marad vagy egyenes vonalú egyenletes mozgást végez.",
-        dyn2: "<b>Newton II. törvénye:</b> F = m · a. A gyorsulást az eredő erő (ΣF) hozza létre.",
-        dyn3: "<b>Newton III. törvénye:</b> Hatás-ellenhatás. Az erők párosával lépnek fel, egyenlő nagyságúak és ellentétesek.",
-        fric: "<b>Súrlódás és mozgás:</b> Vízszintes talajon a gyorsulást a húzóerő (F) és a súrlódási erő (F<sub>s</sub>) különbsége határozza meg:<br><b>m · a = F - (µ · m · g)</b>",
-        spring: "<b>Rugalmas erő:</b> <b>F = D · Δx</b>. D: rugóállandó [N/m], Δx: megnyúlás [m]."
+        dyn1: "<b>Newton I.:</b> Tehetetlenség törvénye. Ha ΣF=0, a test sebessége nem változik.",
+        dyn2: "<b>Newton II.:</b> Dinamika alaptörvénye. <b>F = m · a</b>",
+        dyn3: "<b>Newton III.:</b> Hatás-ellenhatás törvénye. Erő-ellenerő párok.",
+        fric: "<b>Súrlódás:</b> Vízszintes talajon az eredő erő: <b>F<sub>e</sub> = F<sub>húzó</sub> - F<sub>s</sub></b>, ahol F<sub>s</sub> = µ · m · g.",
+        spring: "<b>Rugó:</b> Rugalmas erő: <b>F = D · Δx</b>. (D: rugóállandó, Δx: megnyúlás)"
     };
 
     function toggleTheory() {
@@ -135,48 +134,48 @@
         const f1 = Math.floor(Math.random() * 50) + 10;
         document.getElementById('exercise-text').innerHTML = `Egy testre balra ${f1} N erő hat. Mekkora erőnek kell hatnia jobbra, hogy a test nyugalomban maradjon?`;
         currentTasks = [{ label: "Erő", unit: "N", ans: f1 }];
-        fullSteps = `ΣF = 0 feltétel miatt a két erőnek egyenlőnek kell lennie.`;
+        fullSteps = `Egyensúlyban ΣF = 0, így F_jobbra = F_balra = ${f1} N.`;
     }
 
     function genDyn2() {
         const m = Math.floor(Math.random() * 10) + 2, a = Math.floor(Math.random() * 5) + 1;
         document.getElementById('exercise-text').innerHTML = `Mekkora erő szükséges egy ${m} kg tömegű test ${a} m/s² gyorsításához?`;
         currentTasks = [{ label: "Erő (F)", unit: "N", ans: m * a }];
-        fullSteps = `F = m · a = ${m} · ${a} = ${m*a} N.`;
+        fullSteps = `F = m · a = ${m} kg · ${a} m/s² = ${m*a} N.`;
     }
 
     function genDyn3() {
         const f = Math.floor(Math.random() * 100) + 20;
-        document.getElementById('exercise-text').innerHTML = `Egy "A" test ${f} N erővel nyomja a "B" testet. Mekkora erővel hat a "B" test az "A" testre?`;
+        document.getElementById('exercise-text').innerHTML = `Egy "A" test ${f} N erővel nyomja a "B" testet. Mekkora ellenállást fejt ki a "B" test?`;
         currentTasks = [{ label: "Erő", unit: "N", ans: f }];
-        fullSteps = `Newton III. törvénye: hatás = ellenhatás.`;
+        fullSteps = `Hatás-ellenhatás törvénye szerint az erők nagysága megegyezik: ${f} N.`;
     }
 
     function genFric() {
         const variant = Math.floor(Math.random() * 3);
-        const m = Math.floor(Math.random() * 10) + 5; // 5-15 kg
-        const mu = parseFloat((Math.random() * 0.3 + 0.1).toFixed(2)); // 0.1 - 0.4
+        const m = Math.floor(Math.random() * 10) + 5;
+        const mu = parseFloat((Math.random() * 0.3 + 0.1).toFixed(2));
         const fs = m * 10 * mu;
 
         if (variant === 0) { // a-t keressük
-            const f_huz = Math.floor(fs + (Math.random() * 20 + 5));
-            const a = (f_huz - fs) / m;
-            document.getElementById('exercise-text').innerHTML = `Egy ${m} kg tömegű testet F = ${f_huz} N erővel húzunk vízszintesen. A súrlódási együttható µ = ${mu}. Mekkora a test gyorsulása? (g = 10 m/s²)`;
+            const fh = Math.floor(fs + (Math.random() * 20 + 5));
+            const a = (fh - fs) / m;
+            document.getElementById('exercise-text').innerHTML = `Egy ${m} kg tömegű testet F = ${fh} N erővel húzunk. A súrlódási együttható µ = ${mu}. Mekkora a gyorsulás? (g=10)`;
             currentTasks = [{ label: "Gyorsulás (a)", unit: "m/s²", ans: parseFloat(a.toFixed(2)) }];
-            fullSteps = `1. Súrlódási erő: F<sub>s</sub> = µ·m·g = ${mu}·${m}·10 = ${fs} N<br>2. Eredő erő: F<sub>e</sub> = F - F<sub>s</sub> = ${f_huz} - ${fs} = ${f_huz-fs} N<br>3. Gyorsulás: a = F<sub>e</sub> / m = ${f_huz-fs} / ${m} = ${a.toFixed(2)} m/s²`;
+            fullSteps = `F<sub>s</sub> = µ·m·g = ${fs} N. Eredő erő F<sub>e</sub> = F<sub>h</sub> - F<sub>s</sub> = ${fh-fs} N. a = F<sub>e</sub>/m = ${(fh-fs)/m} m/s².`;
         } else if (variant === 1) { // F-et keressük
             const a = Math.floor(Math.random() * 4) + 1;
-            const f_huz = (m * a) + fs;
-            document.getElementById('exercise-text').innerHTML = `Mekkora F erővel kell húznunk egy ${m} kg tömegű testet, hogy a gyorsulása ${a} m/s² legyen? A súrlódási együttható µ = ${mu}. (g = 10 m/s²)`;
-            currentTasks = [{ label: "Húzóerő (F)", unit: "N", ans: parseFloat(f_huz.toFixed(2)) }];
-            fullSteps = `1. Súrlódási erő: F<sub>s</sub> = µ·m·g = ${mu}·${m}·10 = ${fs} N<br>2. Szükséges eredő erő: F<sub>e</sub> = m·a = ${m}·${a} = ${m*a} N<br>3. Húzóerő: F = F<sub>e</sub> + F<sub>s</sub> = ${m*a} + ${fs} = ${f_huz} N`;
+            const fh = (m * a) + fs;
+            document.getElementById('exercise-text').innerHTML = `Mekkora F erővel kell húzni egy ${m} kg-os testet, hogy a gyorsulása ${a} m/s² legyen? (µ = ${mu}, g=10)`;
+            currentTasks = [{ label: "Húzóerő (F)", unit: "N", ans: parseFloat(fh.toFixed(2)) }];
+            fullSteps = `F<sub>s</sub> = ${fs} N. Szükséges eredő erő F<sub>e</sub> = m·a = ${m*a} N. F<sub>h</sub> = F<sub>e</sub> + F<sub>s</sub> = ${fh} N.`;
         } else { // mu-t keressük
             const a = Math.floor(Math.random() * 3) + 1;
-            const f_huz = Math.floor((m * a) + (m * 10 * 0.5)); // generálunk egy húzóerőt
-            const mu_val = (f_huz - m * a) / (m * 10);
-            document.getElementById('exercise-text').innerHTML = `Egy ${m} kg tömegű testet F = ${f_huz} N erővel húzunk, és azt tapasztaljuk, hogy a gyorsulása ${a} m/s². Mekkora a súrlódási együttható (µ)?`;
-            currentTasks = [{ label: "Együttható (µ)", unit: "", ans: parseFloat(mu_val.toFixed(2)) }];
-            fullSteps = `1. Eredő erő: F<sub>e</sub> = m·a = ${m}·${a} = ${m*a} N<br>2. Súrlódási erő: F<sub>s</sub> = F - F<sub>e</sub> = ${f_huz} - ${m*a} = ${f_huz - m*a} N<br>3. µ = F<sub>s</sub> / (m·g) = ${f_huz - m*a} / (${m}·10) = ${mu_val.toFixed(2)}`;
+            const fh = Math.floor((m * a) + (m * 10 * 0.5));
+            const mu_res = (fh - m * a) / (m * 10);
+            document.getElementById('exercise-text').innerHTML = `Egy ${m} kg-os testet F = ${fh} N-nal húzunk, a gyorsulása ${a} m/s². Mekkora a súrlódási együttható (µ)?`;
+            currentTasks = [{ label: "Együttható (µ)", unit: "", ans: parseFloat(mu_res.toFixed(2)) }];
+            fullSteps = `F<sub>e</sub> = m·a = ${m*a} N. F<sub>s</sub> = F<sub>h</sub> - F<sub>e</sub> = ${fh-m*a} N. µ = F<sub>s</sub> / (m·g) = ${mu_res.toFixed(2)}.`;
         }
     }
 
@@ -189,82 +188,56 @@
             fullSteps = `F = D · Δx = ${D} · ${dx} = ${D*dx} N.`;
         } else if (type === 1) { // D
             const F = Math.floor(Math.random() * 80) + 10, dx = (Math.floor(Math.random() * 10) + 2) / 100;
-            document.getElementById('exercise-text').innerHTML = `F = ${F} N erő hatására a rugó Δx = ${dx} m-t nyúlik meg. Mekkora D?`;
+            document.getElementById('exercise-text').innerHTML = `F = ${F} N erő hatására a rugó Δx = ${dx} m-t nyúlik meg. Mekkora a rugóállandó (D)?`;
             currentTasks = [{ label: "Rugóállandó (D)", unit: "N/m", ans: parseFloat((F / dx).toFixed(1)) }];
             fullSteps = `D = F / Δx = ${F} / ${dx} = ${(F/dx).toFixed(1)} N/m.`;
         } else { // dx
             const F = Math.floor(Math.random() * 60) + 10, D = (Math.floor(Math.random() * 5) + 1) * 100;
-            document.getElementById('exercise-text').innerHTML = `D = ${D} N/m rugót F = ${F} N erővel húzzuk. Mekkora a megnyúlás?`;
+            document.getElementById('exercise-text').innerHTML = `D = ${D} N/m rugót F = ${F} N erővel húzunk. Mekkora a megnyúlás (Δx)?`;
             currentTasks = [{ label: "Megnyúlás (Δx)", unit: "m", ans: parseFloat((F / D).toFixed(3)) }];
             fullSteps = `Δx = F / D = ${F} / ${D} = ${(F/D).toFixed(3)} m.`;
         }
     }
 
-    
-    function showSolution() {
-        solSeen = true;
-        const box = document.getElementById('solution-box');
-        box.innerHTML = `<b>Megoldás:</b><br>${fullSteps}`;
-        box.style.display = 'block';
-    }
-function checkAnswers() {
+    function checkAnswers() {
         let allCorrect = true;
         currentTasks.forEach((t, i) => {
             const val = parseFloat(document.getElementById(`ans-${i}`).value);
-            // Megengedőbb kerekítés (0.02), hogy a tizedesek ne okozzanak gondot
             if (isNaN(val) || Math.abs(val - t.ans) > 0.02) allCorrect = false;
         });
 
-        const feedback = document.getElementById('feedback');
         if (allCorrect) {
-            feedback.innerHTML = "✅ Helyes válasz!";
-            feedback.style.color = "#4caf50";
-            
-            // Felelés mód logikája
+            document.getElementById('feedback').innerHTML = "✅ Helyes!";
+            document.getElementById('feedback').style.color = "#4caf50";
             if (appMode === 'felel' && !examDone[currentCat]) {
-                // Csak akkor kap pontot, ha nem nézte meg a megoldást
                 examScore[currentCat] = solSeen ? 0 : 1;
                 examDone[currentCat] = true;
                 document.getElementById('btn-' + currentCat).classList.add('completed');
-                
-                // Minden ellenőrzésnél megnézzük, vége van-e a felelésnek
                 checkExamEnd();
             }
         } else {
-            feedback.innerHTML = "❌ Nem jó, próbáld újra!";
-            feedback.style.color = "#f44336";
+            document.getElementById('feedback').innerHTML = "❌ Próbáld újra!";
+            document.getElementById('feedback').style.color = "#f44336";
         }
     }
-    function checkExamEnd() {
-        // Megszámoljuk, hány kategória kész (összesen 5-nek kell lennie)
-        const completedCount = Object.values(examDone).filter(v => v === true).length;
-        
-        if (completedCount === 5) {
-            stopTimer();
-            const totalPoints = Object.values(examScore).reduce((a, b) => a + b, 0);
-            
-            // Jegyszámítás 1-5 skálán
-            let grade = 1;
-            if (totalPoints === 5) grade = 5;
-            else if (totalPoints === 4) grade = 4;
-            else if (totalPoints === 3) grade = 3;
-            else if (totalPoints === 2) grade = 2;
-            else grade = 1;
 
+    function showSolution() {
+        solSeen = true;
+        document.getElementById('solution-box').innerHTML = `<b>Megoldás:</b><br>${fullSteps}`;
+        document.getElementById('solution-box').style.display = 'block';
+    }
+
+    function checkExamEnd() {
+        const completed = Object.values(examDone).filter(v => v === true).length;
+        if (completed === 5) {
+            stopTimer();
+            const score = Object.values(examScore).reduce((a, b) => a + b, 0);
+            const grade = score === 5 ? 5 : score === 4 ? 4 : score === 3 ? 3 : score === 2 ? 2 : 1;
             const display = document.getElementById('grade-display');
             display.style.display = 'block';
-            display.innerHTML = `
-                <h2 style="color: #1a237e;">Felelés vége!</h2>
-                <p style="font-size: 1.2em;">Sikeresen teljesítetted mind az 5 témakört.</p>
-                <div style="font-size: 2em; margin: 15px 0;">Szerzett pont: <b>${totalPoints}</b> / 5</div>
-                <h1 style="font-size: 3em; color: #d32f2f;">Érdemjegy: ${grade}</h1>
-                <p>Időtartam: ${document.getElementById('exam-timer').innerText}</p>
-                <button class="action-btn" onclick="location.reload()">Új felelés indítása</button>
-            `;
-            
-            // Görgetés az eredményhez
-            display.scrollIntoView({ behavior: 'smooth' });
+            display.innerHTML = `<h2>Vége!</h2><p>Pont: ${score}/5</p><h1>Jegy: ${grade}</h1><button class="action-btn" onclick="location.reload()">Újrakezdés</button>`;
+        }
+    }
 </script>
 </body>
 </html>
-
