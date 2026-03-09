@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Fizika Mester - Izotermás Verzió</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 1100px; margin: 10px auto; padding: 20px; background: #eceff1; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .diagram-box { background: white; border: 1px solid #ccc; margin: 10px auto; width: 500px; padding: 40px; position: relative; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85em; }
+        th { background: #1a237e; color: white; padding: 8px; }
+        td { border: 1px solid #cfd8dc; padding: 5px; text-align: center; }
+        input { width: 75px; padding: 5px; border: 2px solid #ccc; border-radius: 3px; text-align: center; font-weight: bold; }
+        input.correct { border-color: #4caf50 !important; background: #e8f5e9 !important; }
+        input.wrong { border-color: #f44336 !important; background: #ffebee !important; }
+        .given { background: #e3f2fd; color: #1a237e; font-weight: bold; padding: 5px; border-radius: 3px; display: inline-block; min-width: 50px; }
+        .action-btn { background: #1a237e; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; margin: 5px; transition: 0.3s; }
+        #help-log { margin-top: 20px; padding: 20px; background: #fffde7; border: 2px solid #fbc02d; border-radius: 10px; display: none; font-size: 0.95em; line-height: 1.6; }
+        .energy-col { display: none; background: #fff3e0; }
+        .formula { font-family: monospace; color: #d32f2f; font-weight: bold; background: #f5f5f5; padding: 2px 4px; }
+        .step-title { font-weight: bold; color: #1a237e; border-bottom: 2px solid #1a237e; margin-top: 15px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div style="text-align:center; font-weight:bold; margin-bottom:10px; font-size: 1.3em; color: #1a237e;" id="task-info"></div>
+    
+    <div class="diagram-box">
+        <svg id="svg-diag" width="450" height="350" viewBox="-80 -30 550 400" style="overflow:visible; display:block; margin:auto;"></svg>
+    </div>
+
+    <h3 id="phase-label" style="text-align:center; color:#1a237e;">1. FÁZIS: Állapotjelzők (p, V, T)</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Pont</th><th>p [kPa]</th><th>V [dm³]</th><th>T [K]</th>
+                <th class="energy-col">ΔU [J]</th><th class="energy-col">W [J]</th><th class="energy-col">Q [J]</th>
+            </tr>
+        </thead>
+        <tbody id="task-body"></tbody>
+    </table>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <button id="check-btn" class="action-btn" onclick="checkCurrentPhase()">Ellenőrzés & Megoldás</button>
+        <button id="next-btn" class="action-btn" style="background:#4caf50; display:none;" onclick="startPhase2()">Tovább az energiákhoz →</button>
+        <button class="action-btn" style="background:#607d8b" onclick="initTask()">Új feladat</button>
+    </div>
+
+    <div id="help-log"></div>
+</div>
+
+<script>
+const R = 8.314;
+let task = { points: [], energies: [], n: 1, type: 'pv', phase: 1 };
+
+function initTask() {
+    task.phase = 1;
+    document.getElementById('help-log').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+    document.querySelectorAll('.energy-col').forEach(el => el.style.display = 'none');
+    document.getElementById('phase-label').innerText = "1. FÁZIS: Állapotjelzők (p, V, T)";
+
+    const types = ['pv', 'pt', 'tv'];
+    task.type = types[Math.floor(Math.random() * types.length)];
+    task.n = parseFloat((1 + Math.random() * 0.8).toFixed(1));
+    document.getElementById('task-info').innerText = `${task.type.toUpperCase()} diagram | n = ${task.n} mol`;
+    
+    generateCycle();
+    renderTable();
+    drawDiagram();
+}
+
+function generateCycle() {
+    let p1 = 100 + Math.floor(Math.random() * 50);
+    let V1 = 10 + Math.floor(Math.random() * 5);
+    task.points = [
+        {p: p1, V: V1, T: (p1 * V1) / (task.n * R)},
+        {p: p1 * 2, V: V1, T: (p1 * 2 * V1) / (task.n * R)},
+        {p: p1 * 2, V: V1 * 2, T: (p1 * 2 * V1 * 2) / (task.n * R)},
+        {p: p1, V: V1 * 2, T: (p1 * V1 * 2) / (task.n * R)}
+    ];
+    task.energies = task.points.map((pt, i) => {
+        let next = task.points[(i+1)%4];
+        let dU = 1.5 * task.n * R * (next.T - pt.T);
+        let w = (Math.abs(pt.p - next.p) < 0.1) ? -pt.p * (next.V - pt.V) : 0;
+        return { dU, w, q: dU - w };
+    });
+}
+
+function drawDiagram() {
+    const svg = document.getElementById('svg-diag');
+    svg.innerHTML = '';
+    const map = {'pv':{x:'V', y:'p', lx:'V [dm³]', ly:'p [kPa]'}, 'pt':{x:'T', y:'p', lx:'T [K]', ly:'p [kPa]'}, 'tv':{x:'T', y:'V', lx:'T [K]', ly:'V [dm³]'}}[task.type];
+    const maxX = Math.max(...task.points.map(p => p[map.x])) * 1.4;
+    const maxY = Math.max(...task.points.map(p => p[map.y])) * 1.4;
+    const sX = v => (v / maxX) * 400; const sY = v => 300 - (v / maxY) * 300;
+
+    let h = `<line x1="0" y1="300" x2="430" y2="300" stroke="black" stroke-width="2""")/>><line x1="0" y1="-10" x2="0" y2="300" stroke="black" stroke-width="2""")/>>
+             <text x="400" y="330" font-weight="bold">${map.lx}</text><text x="-75" y="10" font-weight="bold" transform="rotate(-90,-75,10)">${map.ly}</text>`;
+
+    // Izotermák rajzolása (csak PV diagramon látványos, de mindenhol segít)
+    task.points.forEach(pt => {
+        if(task.type === 'pv') {
+            let d = "M";
+            for(let v = maxX*0.05; v <= maxX; v += maxX/20) {
+                let p_iso = (task.n * R * pt.T) / v;
+                d += ` ${sX(v)} ${sY(p_iso)}`;
+            }
+            h += `<path d="${d}" fill="none" stroke="#ccc" stroke-width="1" stroke-dasharray="4""")/>>`;
+        }
+    });
+
+    // Tengelyfeliratok és Ciklus
+    [...new Set(task.points.map(p => p[map.y]))].forEach(y => {
+        h += `<text x="-50" y="${sY(y) + 5}" font-size="12" font-weight="bold">${y.toFixed(0)}</text><line x1="-5" y1="${sY(y)}" x2="5" y2="${sY(y)}" stroke="black""")/>>`;
+    });
+    [...new Set(task.points.map(p => p[map.x]))].forEach(x => {
+        h += `<text x="${sX(x) - 15}" y="325" font-size="12" font-weight="bold">${x.toFixed(task.type==='pv'?1:0)}</text><line x1="${sX(x)}" y1="295" x2="${sX(x)}" y2="305" stroke="black""")/>>`;
+    });
+
+    task.points.forEach((pt, i) => {
+        let next = task.points[(i+1)%4];
+        h += `<line x1="${sX(pt[map.x])}" y1="${sY(pt[map.y])}" x2="${sX(next[map.x])}" y2="${sY(next[map.y])}" stroke="#1a237e" stroke-width="3" />`;
+        h += `<circle cx="${sX(pt[map.x])}" cy="${sY(pt[map.y])}" r="6" fill="#1a237e""")/>><text x="${sX(pt[map.x])+10}" y="${sY(pt[map.y])-10}" font-weight="bold" fill="#d32f2f" font-size="16">${i+1}</text>`;
+    });
+    svg.innerHTML = h;
+}
+
+function renderTable() {
+    const body = document.getElementById('task-body');
+    body.innerHTML = task.points.map((p, i) => {
+        let isP1 = i === 0;
+        return `<tr><td>${i+1}. pont</td>
+            <td>${isP1 ? `<span class="given">${p.p.toFixed(0)}</span>` : `<input type="text" data-ans="${p.p.toFixed(0)}">`}</td>
+            <td>${isP1 ? `<span class="given">${p.V.toFixed(1)}</span>` : `<input type="text" data-ans="${p.V.toFixed(1)}">`}</td>
+            <td>${isP1 ? `<span class="given">${p.T.toFixed(0)}</span>` : `<input type="text" data-ans="${p.T.toFixed(0)}">`}</td>
+            <td class="energy-col"><input type="text" class="e-in" data-ans="${task.energies[i].dU.toFixed(0)}"></td>
+            <td class="energy-col">${task.energies[i].w === 0 ? '0' : `<input type="text" class="e-in" data-ans="${task.energies[i].w.toFixed(0)}">`}</td>
+            <td class="energy-col"><input type="text" class="e-in" data-ans="${task.energies[i].q.toFixed(0)}"></td></tr>`}).join('');
+}
+
+function checkCurrentPhase() {
+    let allOk = true;
+    const inputs = document.querySelectorAll(task.phase === 1 ? 'input:not(.e-in)' : '.e-in');
+    inputs.forEach(inp => {
+        let ans = parseFloat(inp.dataset.ans), val = parseFloat(inp.value.replace(',','.'));
+        let ok = !isNaN(val) && (Math.abs(ans - val) < Math.max(3, ans * 0.03));
+        inp.classList.remove('correct', 'wrong'); inp.classList.add(ok ? 'correct' : 'wrong');
+        if(!ok) allOk = false;
+    });
+    showHelp();
+    if(allOk && task.phase === 1) document.getElementById('next-btn').style.display = 'inline-block';
+}
+
+function showHelp() {
+    const log = document.getElementById('help-log'); log.style.display = 'block';
+    let h = `<div class='step-title'>${task.phase === 1 ? "MEGOLDÁS: ÁLLAPOTJELZŐK" : "MEGOLDÁS: ENERGIÁK"}</div>`;
+    if(task.phase === 1) {
+        task.points.forEach((p, i) => { if(i>0) h += `• ${i+1}. pont: p=<b>${p.p.toFixed(0)}</b>, V=<b>${p.V.toFixed(1)}</b>, T=(${p.p.toFixed(0)}·${p.V.toFixed(1)})/(${task.n}·8.314)=<b>${p.T.toFixed(0)} K</b><br>`; });
+    } else {
+        task.energies.forEach((e, i) => { h += `• ${i+1}→${(i+1)%4+1}: ΔU=<b>${e.dU.toFixed(0)} J</b>, W=<b>${e.w.toFixed(0)} J</b>, Q=<b>${e.q.toFixed(0)} J</b><br>`; });
+    }
+    log.innerHTML = h;
+}
+
+function startPhase2() {
+    task.phase = 2; document.querySelectorAll('.energy-col').forEach(el => el.style.display = 'table-cell');
+    document.getElementById('next-btn').style.display = 'none';
+    document.getElementById('phase-label').innerText = "2. FÁZIS: Energiák (ΔU, W, Q)";
+    document.getElementById('help-log').style.display = 'none';
+}
+
+initTask();
+</script>
+</body>
+</html>
