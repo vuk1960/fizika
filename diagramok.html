@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Termodinamika Szimulátor</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #1a237e; }
+        h1 { text-align: center; margin-bottom: 5px; }
+        .container { display: grid; grid-template-columns: 350px 1fr; gap: 20px; max-width: 1200px; margin: auto; }
+        .panel { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .controls { display: flex; flex-direction: column; gap: 15px; }
+        .charts-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        canvas { background: #fff; border-radius: 8px; border: 1px solid #ddd; display: block; margin: 0 auto; }
+        .chart-box { text-align: center; padding: 10px; border: 1px solid #eee; border-radius: 12px; }
+        .data-display { font-family: monospace; background: #eef3ff; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1.1em; border: 1px solid #d1d9ff; }
+        select, input[type=range] { width: 100%; padding: 10px; border-radius: 8px; box-sizing: border-box; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<h1>🌡️ Termodinamika: Állapotváltozások</h1>
+
+<div class="container">
+    <div class="panel controls">
+        <label>Folyamat típusa:</label>
+        <select id="processType" onchange="resetSim()">
+            <option value="isothermal">Izoterm (T = áll.)</option>
+            <option value="isobaric">Izobár (p = áll.)</option>
+            <option value="isochoric">Izochor (V = áll.)</option>
+        </select>
+
+        <label id="sliderLabel">Változó:</label>
+        <input type="range" id="slider" min="50" max="300" value="150" oninput="update()">
+        
+        <div class="data-display" id="data">p: 100 kPa | V: 150 L | T: 300 K</div>
+
+        <div style="text-align: center;">
+            <canvas id="pistonCanvas" width="280" height="120"></canvas>
+            <p><b>Henger és Dugattyú</b></p>
+            <canvas id="tempCanvas" width="60" height="120"></canvas>
+            <p><b>Hőmérséklet (T)</b></p>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="charts-container" id="chartsHolder">
+            <!-- Dinamikus diagramok -->
+        </div>
+    </div>
+</div>
+
+<script>
+    const slider = document.getElementById('slider');
+    const processType = document.getElementById('processType');
+    const dataDiv = document.getElementById('data');
+    const pCtx = document.getElementById('pistonCanvas').getContext('2d');
+    const tCtx = document.getElementById('tempCanvas').getContext('2d');
+    const chartsHolder = document.getElementById('chartsHolder');
+
+    let history = [];
+
+    function resetSim() {
+        history = [];
+        const mode = processType.value;
+        chartsHolder.innerHTML = '';
+        
+        const config = {
+            isothermal: { label: "Térfogat (V):", min: 50, max: 300, val: 150, charts: ['PV'] },
+            isobaric: { label: "Hőmérséklet (T):", min: 100, max: 600, val: 300, charts: ['PV', 'VT'] },
+            isochoric: { label: "Hőmérséklet (T):", min: 100, max: 600, val: 300, charts: ['PV', 'PT'] }
+        }[mode];
+
+        document.getElementById('sliderLabel').innerText = config.label;
+        slider.min = config.min; slider.max = config.max; slider.value = config.val;
+
+        config.charts.forEach(type => {
+            const wrap = document.createElement('div');
+            wrap.className = 'chart-box';
+            wrap.innerHTML = `<b>${type[0]}-${type[1]} diagram</b><br><canvas id="chart${type}" width="350" height="300"></canvas>`;
+            chartsHolder.appendChild(wrap);
+        });
+        update();
+    }
+
+    function update() {
+        const val = parseFloat(slider.value);
+        const mode = processType.value;
+        let p, V, T;
+
+        if (mode === 'isothermal') { V = val; T = 300; p = 30000 / V; }
+        else if (mode === 'isobaric') { T = val; p = 100; V = T / 2.5; }
+        else if (mode === 'isochoric') { T = val; V = 120; p = T / 1.5; }
+
+        dataDiv.innerText = `p: ${p.toFixed(1)} kPa | V: ${V.toFixed(1)} L | T: ${T.toFixed(0)} K`;
+        history.push({p, V, T});
+        if(history.length > 100) history.shift();
+
+        drawPiston(V, p);
+        drawThermometer(T);
+        
+        if(document.getElementById('chartPV')) drawGraph('chartPV', 'V', 'p', 400, 400);
+        if(document.getElementById('chartVT')) drawGraph('chartVT', 'T', 'V', 700, 400);
+        if(document.getElementById('chartPT')) drawGraph('chartPT', 'T', 'p', 700, 400);
+    }
+
+    function drawGraph(id, keyX, keyY, maxX, maxY) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0,0,350,300);
+        
+        // Tengelyek
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(40, 20); ctx.lineTo(40, 260); ctx.lineTo(330, 260); ctx.stroke();
+        ctx.font = "12px Arial"; ctx.fillText(keyX, 335, 265); ctx.fillText(keyY, 10, 20);
+
+        // Adatsor
+        ctx.strokeStyle = '#004aad'; ctx.lineWidth = 3; ctx.beginPath();
+        history.forEach((pt, i) => {
+            const x = 40 + (pt[keyX] / maxX) * 280;
+            const y = 260 - (pt[keyY] / maxY) * 230;
+            if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        
+        // Aktuális pont
+        const last = history[history.length-1];
+        ctx.fillStyle = 'red'; ctx.beginPath();
+        ctx.arc(40 + (last[keyX] / maxX) * 280, 260 - (last[keyY] / maxY) * 230, 5, 0, 7);
+        ctx.fill();
+    }
+
+    function drawPiston(V, p) {
+        pCtx.clearRect(0,0,280,120);
+        pCtx.strokeStyle = "#333"; pCtx.strokeRect(40, 30, 200, 60);
+        pCtx.fillStyle = `rgba(0, 74, 173, ${p/400 + 0.1})`;
+        pCtx.fillRect(40, 30, 200 * (V/400), 60);
+        pCtx.fillStyle = "#555"; pCtx.fillRect(40 + 200 * (V/400), 25, 10, 70);
+    }
+
+    function drawThermometer(T) {
+        tCtx.clearRect(0,0,60,120);
+        tCtx.strokeStyle = "#333"; tCtx.strokeRect(20, 10, 20, 100);
+        let fillH = (T / 700) * 100;
+        tCtx.fillStyle = "red"; tCtx.fillRect(20, 110 - fillH, 20, fillH);
+    }
+
+    resetSim();
+</script>
+</body>
+</html>
