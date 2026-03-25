@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Gömbtükör Szimulátor - Homorú és Domború</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
+        .box { background: white; padding: 25px; border-radius: 15px; display: inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        canvas { background: #fff; border: 1px solid #333; border-radius: 5px; }
+        .controls { margin-bottom: 20px; display: flex; gap: 25px; justify-content: center; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 10px; }
+        h1 { color: #1a237e; margin-bottom: 5px; }
+        .subtitle { color: #555; margin-bottom: 20px; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>🔭 Optika: Tükrös távcső (Reflektor)</h1>
+    <div class="subtitle">Homorú és Domború tükör sugármenetei</div>
+    
+    <div class="box">
+        <div class="controls">
+            <div>
+                <label>Tükör típusa:</label>
+                <select id="mode" onchange="draw()">
+                    <option value="concave">Homorú (Gyűjtő)</option>
+                    <option value="convex">Domború (Szóró)</option>
+                </select>
+            </div>
+            <div>
+                <label>Tárgytáv (t):</label>
+                <input type="range" id="do" min="30" max="420" value="250" oninput="draw()">
+            </div>
+            <div>
+                <label>Fókusz (f):</label>
+                <input type="range" id="f" min="60" max="150" value="100" oninput="draw()">
+            </div>
+        </div>
+        <canvas id="mc" width="900" height="450"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mc');
+        const ctx = canvas.getContext('2d');
+        const ho = 60; 
+
+        function draw() {
+            const t = parseFloat(document.getElementById('do').value);
+            const fAbs = parseFloat(document.getElementById('f').value);
+            const mode = document.getElementById('mode').value;
+            const isConcave = (mode === "concave");
+            
+            const cx = 550; 
+            const cy = canvas.height / 2;
+            const f = isConcave ? fAbs : -fAbs;
+            
+            let k = (f * t) / (t - f);
+            let hk = ho * (-k / t);
+
+            const kx = cx - k; 
+            const ky = cy - hk;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "#ccc"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy); ctx.stroke();
+
+            const fX = cx - f;
+            const cX = cx - 2*f;
+
+            // F és C pontok
+            ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(fX, cy, 4, 0, 7); ctx.fill(); ctx.fillText("F", fX-5, cy+25);
+            ctx.fillStyle = "blue"; ctx.beginPath(); ctx.arc(cX, cy, 4, 0, 7); ctx.fill(); ctx.fillText("C", cX-5, cy+25);
+
+            // Tükör ív
+            ctx.strokeStyle = "#333"; ctx.lineWidth = 5; ctx.beginPath();
+            if(isConcave) ctx.arc(cx - fAbs*2, cy, fAbs*2, -0.6, 0.6);
+            else ctx.arc(cx + fAbs*2, cy, fAbs*2, Math.PI-0.6, Math.PI+0.6);
+            ctx.stroke();
+
+            const tx = cx - t;
+            const ty = cy - ho;
+
+            // SUGÁRMENETEK
+            drawFullRay(tx, ty, cx, ty, fX, cy, "#f39c12"); // Párhuzamos
+            drawFullRay(tx, ty, cx, cy, tx, cy + ho, "#95a5a6"); // V-sugár
+            drawFullRay(tx, ty, cx, ky, 0, ky, "#1abc9c"); // Fókuszsugár
+
+            // TÁRGY
+            drawArrow(tx, cy, tx, ty, "#27ae60", "Tárgy");
+
+            // KÉP
+            if (Math.abs(t - f) > 5) {
+                const isVirtual = (kx > cx); 
+                const label = isVirtual ? "Virtuális kép" : "Valódi kép";
+                const color = isVirtual ? "#8e44ad" : "#d35400";
+                drawArrow(kx, cy, kx, ky, color, label);
+            }
+        }
+
+        function drawFullRay(startX, startY, hitX, hitY, targetX, targetY, col) {
+            ctx.strokeStyle = col; ctx.lineWidth = 2;
+            ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(hitX, hitY); ctx.stroke();
+
+            let dx = targetX - hitX;
+            let dy = targetY - hitY;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            let ux = dx / dist;
+            let uy = dy / dist;
+            let dir = (targetX < hitX) ? 1 : -1;
+
+            ctx.beginPath(); ctx.moveTo(hitX, hitY);
+            ctx.lineTo(hitX + ux * 1500 * dir, hitY + uy * 1500 * dir); ctx.stroke();
+
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath(); ctx.moveTo(hitX, hitY);
+            ctx.lineTo(hitX - ux * 1500 * dir, hitY - uy * 1500 * dir); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawArrow(x1, y1, x2, y2, col, label) {
+            ctx.strokeStyle = ctx.fillStyle = col; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            const head = y2 < y1 ? -10 : 10;
+            ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2-6, y2-head); ctx.lineTo(x2+6, y2-head); ctx.fill();
+            ctx.fillStyle = "black";
+            ctx.fillText(label, x2 - 25, y2 < y1 ? y2 - 15 : y2 + 30);
+        }
+        draw();
+    </script>
+</body>
+</html>
