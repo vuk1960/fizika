@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Termodinamikai Digitális Labor – Web</title>
+  <!-- Plotly CDN -->
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+  <style>
+    :root {
+      --font-scale: 1.2; /* Ha nagyobb betű kell: 1.4 / 1.6 */
+    }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      margin: 0; padding: 0;
+      background: #fafafa; color: #111;
+      font-size: calc(16px * var(--font-scale));
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 16px;
+      padding: 16px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .panel {
+      background: white;
+      border: 1px solid #e6e6e6;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 20px -15px rgba(0,0,0,0.25);
+    }
+    .panel h2 {
+      font-size: calc(22px * var(--font-scale));
+      margin: 0 0 8px;
+    }
+    .panel h3 {
+      font-size: calc(18px * var(--font-scale));
+      margin: 16px 0 8px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      align-items: center;
+      margin: 6px 0;
+    }
+    label { font-weight: 600; }
+    input, select {
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-sizing: border-box;
+    }
+
+    /* ---- JAVÍTOTT SZÉLES GOMB ---- */
+    .wide-button {
+      background: #004aad;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      padding: 14px 28px;
+      font-size: calc(18px * var(--font-scale));
+      border-radius: 12px;
+
+      display: inline-block;     /* <<< fontos! */
+      min-width: 320px;          /* <<< ettől lett szélesebb */
+      text-align: center;        /* <<< középre igazított szöveg */
+    }
+
+    .constants {
+      font-family: Consolas, monospace;
+      color: darkgreen; white-space: pre-line;
+      background: #f4fff4; border: 1px dashed #b0d4b0;
+      border-radius: 10px; padding: 10px; margin-bottom: 8px;
+    }
+    .result {
+      font-family: Consolas, monospace;
+      white-space: pre-line;
+      color: #004aad;
+      font-weight: 700;
+      background: #eef3ff;
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .params {
+      font-family: Consolas, monospace;
+      background: #f2f2f2; padding: 8px; border-radius: 10px;
+    }
+    .warn { color: #9a6b00; font-weight: 700; margin-top: 6px; }
+
+    .charts {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+    }
+    #plot {
+      width: 100%;
+      height: 520px;
+    }
+    #pistonCanvas {
+      width: 100%;
+      height: 520px;
+      border: 1px solid #eee;
+      border-radius: 14px;
+      background: white;
+    }
+
+    .formula {
+      font-family: "Times New Roman", serif;
+      font-style: italic; color: #555;
+      white-space: pre-line;
+    }
+    .mode-inline {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .footer-note {
+      color: #666;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 1fr; }
+      .charts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+<h1 style="text-align:center; color: #1a237e;">Termodinamika: Állapotváltozások</h1>
+<h1 style="text-align:right; color: #1a237e; font-size: 1rem;"> <a href="index.html">← Vissza a főoldalra</a></h1>
+  <div class="app">
+
+    <!-- ───────────────── BAL PANEL ───────────────── -->
+    <div class="panel">
+      <div class="constants">NA = 6,022 × 10^23 1/mol
+k  = 1,38 × 10^-23 J/K
+R  = 8,314 J/(mol·K)</div>
+
+      <div class="row">
+        <label for="n">Anyagmennyiség n [mol]:</label>
+        <input id="n" type="number" step="0.1" value="1.0" />
+      </div>
+
+      <div class="row">
+        <label>Molekulatípus (f):</label>
+        <div class="mode-inline">
+          <label><input type="radio" name="f" value="3" checked> 1 atomos (f=3)</label>
+          <label><input type="radio" name="f" value="5"> 2 atomos (f=5)</label>
+        </div>
+      </div>
+
+      <div class="row">
+        <label for="p1">Kezdő p1 [Pa]:</label>
+        <input id="p1" type="number" step="1000" value="100000" />
+      </div>
+
+      <div class="row">
+        <label for="v1">Kezdő V1 [m³]:</label>
+        <input id="v1" type="number" step="0.001" value="0.01" />
+      </div>
+
+      <div class="row">
+        <label for="mode">Folyamat:</label>
+        <select id="mode">
+          <option>Izobár</option>
+          <option>Izoterm</option>
+          <option>Izochor</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label id="v2p2Label" for="v2p2">Vég V2 [m³]:</label>
+        <input id="v2p2" type="number" step="0.001" value="0.025" />
+      </div>
+
+      <!-- 🔵🔵🔵 JAVÍTOTT GOMB – KÜLÖN SORBAN, KÖZÉPRE 🔵🔵🔵 -->
+      <div style="text-align:center; margin: 14px 0;">
+        <button id="run" class="wide-button">SZÁMÍTÁS ÉS ANIMÁCIÓ</button>
+      </div>
+      <!-- 🔵🔵🔵 END 🔵🔵🔵 -->
+
+      <h3>Alkalmazott képletek:</h3>
+      <div id="formula" class="formula"></div>
+
+      <div id="params" class="params">T1: – K | T2: – K</div>
+      <div id="results" class="result">ΔU: 0 J
+W: 0 J
+Q: 0 J</div>
+      <div id="warn" class="warn"></div>
+
+    </div>
+
+    <!-- ───────────────── JOBB OLDAL: DIAGRAMOK ───────────────── -->
+    <div class="panel">
+      <div class="charts">
+        <div id="plot"></div>
+        <canvas id="pistonCanvas" width="640" height="520"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+/* A JavaScript rész NEM változott — csak a gomb HTML-je és CSS-e lett átírva */
+/* A kód teljes működése érintetlen maradt */
+
+/* ------------------ FIZIKAI KONSTANSOK ------------------ */
+const R = 8.314;
+
+/* ------------------ UI elemek ------------------ */
+const el = id => document.getElementById(id);
+const nEl = el('n');
+const p1El = el('p1');
+const v1El = el('v1');
+const modeEl = el('mode');
+const v2p2El = el('v2p2');
+const v2p2LabelEl = el('v2p2Label');
+const runBtn = el('run');
+const formulaEl = el('formula');
+const paramsEl = el('params');
+const resultsEl = el('results');
+const warnEl = el('warn');
+
+/* f (fokszám) rádiók */
+const fRadios = [...document.querySelectorAll('input[name="f"]')];
+
+/* ------------------ Plotly betűméret ------------------ */
+const baseFont = Math.round(18 * parseFloat(
+  getComputedStyle(document.documentElement).getPropertyValue('--font-scale')
+));
+
+const layout = {
+  title: { text: 'Nyomás–Térfogat (p–V)', font: { size: baseFont + 4 } },
+  xaxis: { title: { text: 'V (m³)', font: { size: baseFont } }, tickfont: { size: baseFont - 1 } },
+  yaxis: { title: { text: 'p (Pa)', font: { size: baseFont } }, tickfont: { size: baseFont - 1 } },
+  margin: { l: 70, r: 20, t: 50, b: 60 },
+  showlegend: false,
+  paper_bgcolor: '#ffffff',
+  plot_bgcolor: '#ffffff'
+};
+
+/* ------------------ Módtól függő képletek ------------------ */
+function getF() {
+  const r = fRadios.find(x => x.checked);
+  return r ? Number(r.value) : 3;
+}
+
+function updateFormula() {
+  const f = getF();
+  const m = modeEl.value;
+  let txt = '';
+
+  if (m === 'Izobár') {
+    txt = `ΔU = (${f}/2)·nR·ΔT\nW = −p·ΔV\nQ = ΔU − W`;
+  } else if (m === 'Izoterm') {
+    txt = `ΔU = 0 (mivel ΔT = 0)\nW = −nRT·ln(V2/V1)\nQ = −W`;
+  } else {
+    txt = `ΔU = (${f}/2)·nR·ΔT\nW = 0\nQ = ΔU`;
+  }
+  formulaEl.textContent = txt;
+}
+updateFormula();
+
+modeEl.addEventListener('change', () => {
+  if (modeEl.value === 'Izochor') {
+    v2p2LabelEl.textContent = 'Vég p2 [Pa]:';
+    v2p2El.value = '300000';
+  } else {
+    v2p2LabelEl.textContent = 'Vég V2 [m³]:';
+    v2p2El.value = '0.025';
+  }
+  updateFormula();
+});
+
+/* ------------------ Segédfüggvény ------------------ */
+function linspace(a, b, N) {
+  const arr = new Array(N);
+  for (let i = 0; i < N; i++) arr[i] = a + (b - a) * (i / (N - 1));
+  return arr;
+}
+
+/* ------------------ Fizikai modell + animáció ------------------ */
+let steps = 100, vRange = [], pRange = [], pYTop = 1;
+let frame = 0, animating = false, timerId = null;
+let clipWarning = false;
+
+function compute() {
+  warnEl.textContent = '';
+
+  const n = Number(nEl.value);
+  const f = getF();
+  const p1 = Number(p1El.value);
+  const v1 = Number(v1El.value);
+  const val2 = Number(v2p2El.value);
+  const m = modeEl.value;
+
+  if (!(n > 0 && p1 > 0 && v1 > 0)) {
+    throw new Error('n, p1, V1 legyen pozitív.');
+  }
+  if ((m === 'Izobár' || m === 'Izoterm') && !(val2 > 0)) {
+    throw new Error('V2 legyen pozitív.');
+  }
+  if (m === 'Izochor' && !(val2 > 0)) {
+    throw new Error('p2 legyen pozitív.');
+  }
+
+  const t1 = (p1 * v1) / (n * R);
+
+  let v2, p2;
+  if (m === 'Izobár') {
+    v2 = val2; p2 = p1;
+  } else if (m === 'Izoterm') {
+    v2 = val2; p2 = (p1 * v1) / v2;
+  } else {
+    v2 = v1; p2 = val2;
+  }
+  const t2 = (p2 * v2) / (n * R);
+
+  const dU = (f / 2) * n * R * (t2 - t1);
+  let W;
+  if (m === 'Izobár') W = -p1 * (v2 - v1);
+  else if (m === 'Izoterm') W = -n * R * t1 * Math.log(v2 / v1);
+  else W = 0;
+
+  const Q = dU - W;
+
+  paramsEl.textContent = `T1: ${t1.toFixed(1)} K | T2: ${t2.toFixed(1)} K
+p2: ${p2.toFixed(0)} Pa | V2: ${v2.toFixed(5)} m³`;
+
+  resultsEl.textContent = `ΔU = ${dU.toFixed(1)} J
+W  = ${W.toFixed(1)} J
+Q  = ${Q.toFixed(1)} J`;
+
+  // diagram adatok
+  vRange = linspace(v1, v2, steps);
+  if (m === 'Izobár') pRange = vRange.map(() => p1);
+  else if (m === 'Izoterm') pRange = vRange.map(V => (p1 * v1) / Math.max(V, 1e-12));
+  else pRange = linspace(p1, p2, steps);
+
+  const pmax = Math.max(...pRange);
+  if (m === 'Izochor') {
+    const limitMult = 5.0;
+    pYTop = Math.max(p1 * 1.1, Math.min(pmax * 1.3, limitMult * p1));
+  } else {
+    pYTop = pmax * 1.3;
+  }
+
+  clipWarning = (pmax > pYTop);
+  if (clipWarning) warnEl.textContent = '⚠ Izochor esetén a p-skála limitálva.';
+
+  drawPlot(1);
+  drawPiston(0);
+}
+
+function drawPlot(k) {
+  const vr = vRange.slice(0, Math.max(1, k));
+  const pr = pRange.slice(0, Math.max(1, k));
+
+  const trace = {
+    x: vr, y: pr, mode: 'lines',
+    line: { color: 'red', width: 4 },
+    fill: 'tozeroy',
+    fillcolor: 'rgba(65,105,225,0.15)'
+  };
+
+  const xMin = Math.min(vRange[0], vRange.at(-1)) * 0.85;
+  const xMax = Math.max(vRange[0], vRange.at(-1)) * 1.15;
+
+  Plotly.react('plot', [trace], {
+    ...layout,
+    xaxis: { ...layout.xaxis, range: [xMin, xMax] },
+    yaxis: { ...layout.yaxis, range: [0, pYTop] }
+  });
+}
+
+const canvas = document.getElementById('pistonCanvas');
+const ctx = canvas.getContext('2d');
+
+function drawPiston(i) {
+  const cv = vRange[Math.min(i, vRange.length - 1)];
+  const vMin = Math.min(...vRange);
+  const vMax = Math.max(...vRange);
+
+  const width = canvas.width;
+  const height = canvas.height;
+
+  const left = 40, right = width - 40;
+  const top = height * 0.25, bottom = height * 0.75;
+
+  const frac = (cv - vMin) / Math.max(1e-12, vMax - vMin);
+  const pistonX = left + frac * (right - left);
+
+  ctx.clearRect(0, 0, width, height);
+
+  // henger
+  ctx.fillStyle = '#f0f0f0';
+  ctx.fillRect(left, top, right - left, bottom - top);
+
+  // gáz
+  ctx.fillStyle = 'rgba(255,165,0,0.45)';
+  ctx.fillRect(left, top, pistonX - left, bottom - top);
+
+  // dugattyú
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(pistonX, top);
+  ctx.lineTo(pistonX, bottom);
+  ctx.stroke();
+
+  // rúd
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(pistonX, (top + bottom) / 2);
+  ctx.lineTo(pistonX + 60, (top + bottom) / 2);
+  ctx.stroke();
+
+  // felirat
+  ctx.font = `bold ${Math.round(18 * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--font-scale')))}px Segoe UI`;
+  ctx.fillStyle = '#000';
+  ctx.textAlign = 'center';
+  ctx.fillText(`V = ${cv.toFixed(5)} m³`, width / 2, top - 10);
+}
+
+function stop() {
+  animating = false;
+  if (timerId) cancelAnimationFrame(timerId);
+}
+
+function animate() {
+  if (!animating) return;
+
+  drawPlot(frame + 1);
+  drawPiston(frame);
+
+  frame++;
+  if (frame >= steps) {
+    animating = false;
+    return;
+  }
+
+  timerId = requestAnimationFrame(animate);
+}
+
+runBtn.addEventListener('click', () => {
+  try {
+    stop();
+    compute();
+    frame = 0;
+    animating = true;
+    animate();
+  } catch (e) {
+    warnEl.textContent = 'Hiba: ' + e.message;
+  }
+});
+
+compute();
+</script>
+
+</body>
+</html>
