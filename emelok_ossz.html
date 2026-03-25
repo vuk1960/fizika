@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Erők egyensúlya</title>
+    <style>
+        :root { --main: #2c3e50; --accent: #e74c3c; --success: #27ae60; --bg: #ecf0f1; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        
+        .header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--main); margin-bottom: 10px; border-bottom: 3px solid var(--main); padding-bottom: 5px; }
+        
+        .modes { margin-bottom: 20px; display: flex; gap: 15px; }
+        .modes button { padding: 10px 25px; border: 2px solid var(--main); background: white; cursor: pointer; font-weight: bold; border-radius: 5px; transition: 0.3s; }
+        .modes button.active { background: var(--main); color: white; }
+
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); width: 850px; }
+        
+        #stage { background: #fff; border: 1px solid #bdc3c7; border-radius: 8px; }
+        .lever { stroke: #8e44ad; stroke-width: 8; stroke-linecap: round; }
+        
+        .interface { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; padding: 20px; background: #fdfdfd; border-radius: 10px; }
+        .stat-box h3 { margin-top: 0; color: var(--main); font-size: 1.1em; }
+        
+        .input-group { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+        input { width: 100px; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1.1em; }
+        .btn-check { background: var(--success); color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        
+        #score-board { font-size: 1.2em; font-weight: bold; color: #2c3e50; margin-top: 10px; display: none; }
+        #feedback { margin-top: 15px; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; min-height: 25px; }
+        .error { background: #fadbd8; color: #c0392b; }
+        .correct { background: #d4efdf; color: #27ae60; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Erők egyensúlya</h1>
+        <div class="modes">
+            <button id="mode-p" class="active" onclick="changeMode('practice')">Gyakorlás</button>
+            <button id="mode-e" onclick="changeMode('exam')">Felelés</button>
+        </div>
+        <div id="score-board">Aktuális pontszám: <span id="points">0</span></div>
+    </div>
+
+    <div class="container">
+        <svg id="canvas" width="800" height="300">
+            <!-- Rács -->
+            <defs>
+                <pattern id="smallGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#f0f0f0" stroke-width="1"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#smallGrid)" />
+            
+            <!-- Emelő -->
+            <line x1="100" y1="200" x2="700" y2="200" class="lever" />
+            <polygon points="400,200 385,240 415,240" fill="#2c3e50" />
+            
+            <!-- Skála feliratok -->
+            <g id="scale-container" style="font-size: 12px; fill: #7f8c8d;"></g>
+            <g id="forces-container"></g>
+        </svg>
+
+        <div class="interface">
+            <div class="stat-box">
+                <h3>Feladat:</h3>
+                <p id="task-text">Számítsd ki a hiányzó értéket az egyensúly eléréséhez!</p>
+                <p><small><i>Megjegyzés: Az óramutató járásával ellentétes forgatás a pozitív.</i></small></p>
+            </div>
+            <div class="stat-box">
+                <div class="input-group">
+                    <label id="label-q">Válasz:</label>
+                    <input type="number" id="user-val" step="0.1">
+                    <button class="btn-check" onclick="check()">OK</button>
+                </div>
+                <div id="feedback"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let mode = 'practice';
+    let points = 0;
+    let target = 0;
+    let forces = [];
+    const step = 40;
+    const centerX = 400;
+
+    function changeMode(m) {
+        mode = m;
+        points = 0;
+        document.getElementById('points').innerText = "0";
+        document.getElementById('score-board').style.display = m === 'exam' ? 'block' : 'none';
+        document.getElementById('mode-p').classList.toggle('active', m === 'practice');
+        document.getElementById('mode-e').classList.toggle('active', m === 'exam');
+        init();
+    }
+
+    function init() {
+        forces = [];
+        document.getElementById('forces-container').innerHTML = "";
+        document.getElementById('feedback').className = "";
+        document.getElementById('feedback').innerText = "";
+        document.getElementById('user-val').value = "";
+
+        // Véletlen felállás: 1-1, 1-2, 2-1 vagy 2-2 erő
+        let counts = [[1,1], [1,2], [2,1], [2,2]][Math.floor(Math.random()*4)];
+        
+        for(let i=0; i<counts[0]; i++) forces.push(genForce(-1));
+        for(let i=0; i<counts[1]; i++) forces.push(genForce(1));
+
+        // Egyensúly számítás
+        let sumM = 0;
+        for(let i=0; i < forces.length - 1; i++) {
+            let f = forces[i];
+            let dir = f.side === -1 ? (f.up ? -1 : 1) : (f.up ? 1 : -1);
+            sumM += f.val * f.dist * dir;
+        }
+
+        // Az utolsó erő az ismeretlen
+        let last = forces[forces.length-1];
+        let dirLast = last.side === -1 ? (last.up ? -1 : 1) : (last.up ? 1 : -1);
+        
+        if(Math.random() > 0.5) {
+            last.val = Math.abs(sumM / last.dist);
+            target = last.val;
+            last.ask = 'F';
+            document.getElementById('label-q').innerText = "Erő (N):";
+        } else {
+            last.dist = Math.abs(sumM / last.val);
+            target = last.dist;
+            last.ask = 'k';
+            document.getElementById('label-q').innerText = "Távolság (m):";
+        }
+        draw();
+    }
+
+    function genForce(side) {
+        let d;
+        do { d = Math.floor(Math.random() * 6) + 1; } while (forces.some(f=>f.side===side && f.dist===d));
+        return { side: side, dist: d, val: (Math.floor(Math.random()*5)+1)*10, up: Math.random() > 0.8 };
+    }
+
+    function draw() {
+        const container = document.getElementById('forces-container');
+        forces.forEach(f => {
+            const x = centerX + (f.side * f.dist * step);
+            const len = f.val * 0.8;
+            const yEnd = f.up ? 200 - len : 200 + len;
+            const color = f.ask ? '#e74c3c' : (f.side === -1 ? '#3498db' : '#2980b9');
+
+            container.innerHTML += `
+                <line x1="${x}" y1="200" x2="${x}" y2="${yEnd}" stroke="${color}" stroke-width="4" marker-end="url(#arrow)" />
+                <text x="${x-15}" y="${yEnd + (f.up?-10:20)}" font-weight="bold" fill="${color}">${f.ask==='F'?'?':f.val+'N'}</text>
+                <text x="${x-10}" y="190" fill="#95a5a6" style="font-size:11px">${f.ask==='k'?'?':f.dist+'m'}</text>
+            `;
+        });
+    }
+
+    function check() {
+        const val = parseFloat(document.getElementById('user-val').value);
+        const fb = document.getElementById('feedback');
+        
+        if(Math.abs(val - target) < 0.2) {
+            fb.innerText = "Helyes megoldás!";
+            fb.className = "correct";
+            if(mode === 'exam') points += 10;
+            setTimeout(init, 2000);
+        } else {
+            fb.innerText = mode === 'practice' ? `Hibás! A helyes: ${target.toFixed(1)}` : "Hibás válasz!";
+            fb.className = "error";
+            if(mode === 'exam') points = Math.max(0, points - 5);
+        }
+        document.getElementById('points').innerText = points;
+    }
+
+    // Skála generálás
+    const sc = document.getElementById('scale-container');
+    for(let i=-7; i<=7; i++) {
+        if(i===0) continue;
+        sc.innerHTML += `<text x="${centerX + i*step - 5}" y="215">${Math.abs(i)}</text>`;
+    }
+    
+    // Nyílhegy
+    const svg = document.getElementById('canvas');
+    svg.innerHTML += `<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="context-stroke"/></marker></defs>`;
+
+    init();
+</script>
+</body>
+</html>
