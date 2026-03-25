@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fizika Feladatok - Egyenes vonalú egyenletes mozgás</title>
+    <script src="https://polyfill.io"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; background-color: #f4f7f6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; }
+        .problem-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 5px solid #3498db; }
+        .hint { display: none; background-color: #e8f4fd; padding: 10px; border-radius: 5px; margin-top: 10px; font-style: italic; font-size: 0.9em; border-left: 3px solid #3498db; }
+        input { width: 120px; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; transition: 0.3s; margin-right: 5px; }
+        .btn-hint { background-color: #f39c12; color: white; }
+        .btn-check { background-color: #27ae60; color: white; }
+        .btn-hint:hover { background-color: #d35400; }
+        .btn-check:hover { background-color: #1e8449; }
+        .result { font-weight: bold; margin-top: 10px; }
+        .correct { color: #27ae60; }
+        .wrong { color: #e74c3c; }
+        .summary { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+<h1>1. Egyenes vonalú egyenletes mozgás</h1>
+
+<div id="problems">
+    <!-- Feladat 1 -->
+    <div class="problem-card" id="p1">
+        <p><strong>1. feladat:</strong> Az emberi haj növekedésének sebessége \(40 \frac{\text{cm}}{\text{év}}\). Mennyit nő a haj egy nap alatt?</p>
+        <button class="btn-hint" onclick="toggleHint('h1')">Segítség kérése</button>
+        <div id="h1" class="hint">Tipp: Váltsd át az 1 évet napokra (365), a centimétert pedig milliméterre! Használd a \(v = \frac{s}{t}\) képletet!</div>
+        <br>
+        Válasz: <input type="text" id="i1" placeholder="pl. 1.1"> mm 
+        <button class="btn-check" onclick="checkAnswer(1, '1.1')">Ellenőrzés</button>
+        <div id="r1" class="result"></div>
+    </div>
+
+    <!-- Feladat 2 -->
+    <div class="problem-card" id="p2">
+        <p><strong>2. feladat:</strong> Egy gépkocsi 10 perc alatt 13 kilométerkövet számol meg (azaz 12 km-t tesz meg). Hány \(\frac{\text{m}}{\text{s}}\) a gépkocsi sebessége?</p>
+        <button class="btn-hint" onclick="toggleHint('h2')">Segítség kérése</button>
+        <div id="h2" class="hint">Tipp: 12 km = 12000 m. 10 perc = 600 s. Oszd el az utat az idővel!</div>
+        <br>
+        Válasz: <input type="text" id="i2" placeholder="pl. 20"> m/s 
+        <button class="btn-check" onclick="checkAnswer(2, '20')">Ellenőrzés</button>
+        <div id="r2" class="result"></div>
+    </div>
+
+    <!-- Feladat 3 -->
+    <div class="problem-card" id="p3">
+        <p><strong>3. feladat:</strong> Palackozó gépsorról percenként 80 üveg kerül le. Két üveg 39 cm helyet foglal el. Milyen sebességgel halad a futószalag?</p>
+        <button class="btn-hint" onclick="toggleHint('h3')">Segítség kérése</button>
+        <div id="h3" class="hint">Tipp: Ha 2 üveg 39 cm, akkor 80 üveg \(40 \times 39 \text{ cm}\) hosszú. Ezt tedd meg 60 másodperc alatt!</div>
+        <br>
+        Válasz: <input type="text" id="i3" placeholder="pl. 0.26"> m/s 
+        <button class="btn-check" onclick="checkAnswer(3, '0.26')">Ellenőrzés</button>
+        <div id="r3" class="result"></div>
+    </div>
+</div>
+
+<div class="summary">
+    <h2>Eredmény összesítő</h2>
+    <p>Helyes megoldások: <span id="score">0</span> / 3</p>
+</div>
+
+<script>
+    function toggleHint(id) {
+        var x = document.getElementById(id);
+        x.style.display = (x.style.display === "block") ? "none" : "block";
+    }
+
+    let correctCount = 0;
+    let solved = new Set();
+
+    function checkAnswer(id, correctVal) {
+        const userVal = document.getElementById('i' + id).value.replace(',', '.').trim();
+        const resDiv = document.getElementById('r' + id);
+        
+        if (userVal === correctVal) {
+            resDiv.innerHTML = "Helyes! ✓";
+            resDiv.className = "result correct";
+            if (!solved.has(id)) {
+                correctCount++;
+                solved.add(id);
+                document.getElementById('score').innerText = correctCount;
+            }
+        } else {
+            resDiv.innerHTML = "Próbáld újra! ✗";
+            resDiv.className = "result wrong";
+        }
+    }
+</script>
+
+</body>
+</html>
