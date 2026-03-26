@@ -9,24 +9,18 @@
         .mode-selector { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; background: #c8e6c9; padding: 15px; border-radius: 10px; }
         .mode-btn { padding: 12px 30px; border: none; cursor: pointer; border-radius: 8px; font-weight: bold; transition: 0.3s; }
         .mode-btn.active { background: #2e7d32; color: white; transform: scale(1.05); }
-        
         .theory-box { background: #fff3e0; padding: 15px; border-left: 6px solid #ff9800; border-radius: 6px; margin-bottom: 20px; line-height: 1.6; }
         .exercise-area { border: 2px solid #e1e4e8; padding: 25px; border-radius: 10px; background: #fafafa; min-height: 250px; position: relative; }
-        
         input { padding: 10px; width: 140px; border: 2px solid #ccc; border-radius: 6px; font-size: 1.1em; margin: 10px 0; }
         .action-btn { background: #4caf50; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 6px; font-weight: bold; margin: 5px; }
         .solution { display: none; background: #fffde7; padding: 15px; border-radius: 8px; border: 1px solid #fbc02d; margin-top: 15px; }
         .timer { font-size: 1.5em; font-weight: bold; text-align: right; color: #d32f2f; margin-bottom: 10px; }
-        .progress { margin-bottom: 10px; font-weight: bold; color: #2e7d32; }
         .grade-box { display: none; text-align: center; padding: 30px; border: 5px solid #2e7d32; border-radius: 15px; background: #f1f8e9; margin-top: 20px; }
         .highlight { color: #1565c0; font-weight: bold; }
-
-        /* Nyomtatási kép beállítása */
         @media print {
             body * { visibility: hidden; }
             #grade-display, #grade-display * { visibility: visible; }
-            #grade-display { position: absolute; left: 0; top: 0; width: 100%; border: none; }
-            .action-btn { display: none; }
+            #grade-display { position: absolute; left: 0; top: 0; width: 100%; border: none; display: block !important; }
         }
     </style>
 </head>
@@ -44,37 +38,29 @@
 
     <div id="theory-section" class="theory-box">
         <b>Képletgyűjtemény:</b> <br>
-        • A rezgések (fordulatok) száma <b>N</b><br> 
-        • <b>t</b> a valahány (N) fordulat megtételéhez szükséges idő<br>
-        • Periódusidő: <b>T = t / N</b> [s]<br>
-        • Frekvencia: <b>f = N / t</b> [Hz]<br>
-        • Összefüggés: <b>f = 1 / T</b>
+        • Rezgések száma: <b>N</b> | Idő: <b>t</b><br>
+        • Periódusidő: <b>T = t / N</b> [s] | Frekvencia: <b>f = N / t</b> [Hz]
     </div>
 
     <div class="exercise-area" id="main-exercise">
-        <div id="progress-text" class="progress" style="display:none;">Feladat: 1 / 5</div>
-        <div id="exercise-text" style="font-size: 1.25em; margin-bottom: 20px; line-height: 1.5;">Betöltés...</div>
-        
+        <div id="progress-text" style="font-weight:bold; color:#2e7d32; margin-bottom:10px; display:none;"></div>
+        <div id="exercise-text" style="font-size: 1.25em; margin-bottom: 20px; line-height: 1.5;"></div>
         <div id="input-container">
             <span id="label-text"></span>: <input type="number" id="user-ans" step="any"> <span id="unit-text"></span>
         </div>
-
         <div id="controls" style="margin-top: 20px;">
-            <button class="action-btn" id="check-btn" onclick="checkAnswer()">Ellenőrzés</button>
-            <button class="action-btn" style="background:#673ab7" id="new-btn" onclick="generateTask()">Új feladat</button>
-            <button class="action-btn" style="background:#0288d1" id="sol-btn" onclick="showSolution()">Súgó / Megoldás</button>
+            <button class="action-btn" onclick="checkAnswer()">Ellenőrzés</button>
+            <button class="action-btn" style="background:#673ab7" onclick="generateTask()">Új feladat</button>
+            <button class="action-btn" style="background:#0288d1" onclick="showSolution()">Súgó / Megoldás</button>
         </div>
-
         <div id="feedback" style="margin-top: 15px; font-weight: bold;"></div>
         <div id="solution-box" class="solution"></div>
     </div>
-
     <div id="grade-display" class="grade-box"></div>
 </div>
 
 <script>
-    let appMode = 'gyak', currentTask = {}, solSeen = false, examStep = 0, examPoints = 0;
-    let seconds = 0, timerInterval;
+    let appMode = 'gyak', currentTask = {}, solSeen = false, examStep = 0, examPoints = 0, seconds = 0, timerInterval;
 
     window.onload = function() { generateTask(); };
 
@@ -82,7 +68,7 @@
         appMode = m;
         document.getElementById('mode-gyak').className = 'mode-btn' + (m === 'gyak' ? ' active' : '');
         document.getElementById('mode-felel').className = 'mode-btn' + (m === 'felel' ? ' active' : '');
-        if(m === 'felel') startExam(); else { stopTimer(); generateTask(); }
+        if(m === 'felel') startExam(); else { clearInterval(timerInterval); document.getElementById('exam-timer').style.display='none'; document.getElementById('progress-text').style.display='none'; generateTask(); }
     }
 
     function startExam() {
@@ -94,14 +80,11 @@
         clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             seconds++;
-            let m = Math.floor(seconds/60).toString().padStart(2,'0');
-            let s = (seconds%60).toString().padStart(2,'0');
+            let m = Math.floor(seconds/60).toString().padStart(2,'0'), s = (seconds%60).toString().padStart(2,'0');
             document.getElementById('exam-timer').innerText = `${m}:${s}`;
         }, 1000);
         generateTask();
     }
-
-    function stopTimer() { clearInterval(timerInterval); document.getElementById('exam-timer').style.display = 'none'; }
 
     function generateTask() {
         solSeen = false;
@@ -110,35 +93,14 @@
         document.getElementById('user-ans').value = "";
         if(appMode === 'felel') document.getElementById('progress-text').innerText = `Feladat: ${examStep} / 5`;
 
-        const n = Math.floor(Math.random() * 95) + 5; 
-        const T = (Math.floor(Math.random() * 20) + 1) / 10; 
-        const t = n * T;
-        const f = 1 / T;
-
-        const types = ['T', 'f', 'n', 't'];
-        const type = types[Math.floor(Math.random() * types.length)];
+        const n = Math.floor(Math.random() * 90) + 10, T = (Math.floor(Math.random() * 19) + 2) / 10, t = n * T, f = 1 / T;
+        const types = ['T', 'f', 'n', 't'], type = types[Math.floor(Math.random() * types.length)];
 
         switch(type) {
-            case 'T':
-                currentTask = { ans: T, unit: "s", label: "Periódusidő (T)",
-                    text: `Egy test <span class="highlight">${t.toFixed(1)} s</span> alatt <span class="highlight">${n}</span> teljes rezgést végez. Mennyi a periódusideje?`,
-                    step: `T = t / N = ${t.toFixed(1)} / ${n} = ${T.toFixed(2)} s` };
-                break;
-            case 'f':
-                currentTask = { ans: f, unit: "Hz", label: "Frekvencia (f)",
-                    text: `Egy fonálinga <span class="highlight">${t.toFixed(1)} s</span> alatt <span class="highlight">${n}</span>-szer lendül át. Mekkora a rezgés frekvenciája?`,
-                    step: `f = N / t = ${n} / ${t.toFixed(1)} = ${f.toFixed(2)} Hz` };
-                break;
-            case 'n':
-                currentTask = { ans: n, unit: "db", label: "Rezgésszám (N)",
-                    text: `Egy rezgő test frekvenciája <span class="highlight">${f.toFixed(2)} Hz</span>. Hány rezgést végez el <span class="highlight">${t.toFixed(1)} s</span> alatt?`,
-                    step: `N = f · t = ${f.toFixed(2)} · ${t.toFixed(1)} = ${n} rezgés` };
-                break;
-            case 't':
-                currentTask = { ans: t, unit: "s", label: "Időtartam (t)",
-                    text: `Egy gép alkatrészének periódusideje <span class="highlight">${T.toFixed(2)} s</span>. Mennyi idő alatt tesz meg <span class="highlight">${n}</span> teljes rezgést?`,
-                    step: `t = N · T = ${n} · ${T.toFixed(2)} = ${t.toFixed(1)} s` };
-                break;
+            case 'T': currentTask = { ans: T, unit: "s", label: "Periódusidő (T)", text: `Egy test <span class="highlight">${t.toFixed(1)} s</span> alatt <span class="highlight">${n}</span> rezgést végez. Mennyi a periódusideje?`, step: `T = t / N = ${t.toFixed(1)} / ${n} = ${T.toFixed(2)} s` }; break;
+            case 'f': currentTask = { ans: f, unit: "Hz", label: "Frekvencia (f)", text: `Egy test <span class="highlight">${t.toFixed(1)} s</span> alatt <span class="highlight">${n}</span> rezgést végez. Mekkora a frekvenciája?`, step: `f = N / t = ${n} / ${t.toFixed(1)} = ${f.toFixed(2)} Hz` }; break;
+            case 'n': currentTask = { ans: n, unit: "db", label: "Rezgésszám (N)", text: `A frekvencia <span class="highlight">${f.toFixed(2)} Hz</span>. Hány rezgés történik <span class="highlight">${t.toFixed(1)} s</span> alatt?`, step: `N = f · t = ${f.toFixed(2)} · ${t.toFixed(1)} = ${n}` }; break;
+            case 't': currentTask = { ans: t, unit: "s", label: "Időtartam (t)", text: `A periódusidő <span class="highlight">${T.toFixed(2)} s</span>. Mennyi idő alatt tesz meg <span class="highlight">${n}</span> rezgést?`, step: `t = N · T = ${n} · ${T.toFixed(2)} = ${t.toFixed(1)} s` }; break;
         }
         document.getElementById('exercise-text').innerHTML = currentTask.text;
         document.getElementById('label-text').innerText = currentTask.label;
@@ -146,84 +108,36 @@
     }
 
     function showSolution() {
-        if(appMode === 'felel') {
-            solSeen = true;
-            alert("Segítség használata esetén erre a feladatra nem kapsz pontot!");
-        }
+        if(appMode === 'felel') { solSeen = true; alert("Súgó használatával nem kapsz pontot!"); }
         document.getElementById('solution-box').innerHTML = `<b>Megoldás:</b> ${currentTask.step}`;
         document.getElementById('solution-box').style.display = "block";
     }
 
     function checkAnswer() {
         let uVal = parseFloat(document.getElementById('user-ans').value);
-        let isCorrect = Math.abs(uVal - currentTask.ans) < 0.1;
-
-        if(isCorrect) {
-            document.getElementById('feedback').style.color = "green";
+        if(Math.abs(uVal - currentTask.ans) < 0.1) {
             if(appMode === 'felel') {
-                if(!solSeen) {
-                    examPoints += 20;
-                    document.getElementById('feedback').innerText = "Helyes! +20 pont";
-                } else {
-                    document.getElementById('feedback').innerText = "Helyes, de segítséget kértél, így 0 pont.";
-                }
-                
-                if(examStep < 5) {
-                    examStep++;
-                    setTimeout(generateTask, 1500);
-                } else {
-                    finishExam("Periodikus mozgások");
-                }
-            } else {
-                document.getElementById('feedback').innerText = "Helyes megoldás!";
-            }
+                if(!solSeen) examPoints += 20;
+                if(examStep < 5) { examStep++; generateTask(); } else finishExam("Periodikus mozgások");
+            } else document.getElementById('feedback').innerText = "Helyes!";
         } else {
-            document.getElementById('feedback').style.color = "red";
-            document.getElementById('feedback').innerText = "Sajnos nem jó.";
-            if(appMode === 'felel') {
-                if(examStep < 5) {
-                    examStep++;
-                    setTimeout(generateTask, 1500);
-                } else {
-                    finishExam("Periodikus mozgások");
-                }
-            }
+            document.getElementById('feedback').innerText = "Hibás!";
+            if(appMode === 'felel') { if(examStep < 5) { examStep++; generateTask(); } else finishExam("Periodikus mozgások"); }
         }
     }
 
-    function finishExam("Periódikus mozgások") {
-        stopTimer();
+    function finishExam(temakor) {
+        clearInterval(timerInterval);
         const g = document.getElementById('grade-display');
         g.style.display = "block";
         document.getElementById('main-exercise').style.display = "none";
-        
         let j = examPoints >= 90 ? 5 : examPoints >= 70 ? 4 : examPoints >= 50 ? 3 : examPoints >= 30 ? 2 : 1;
-        let szovegesJegy = j === 5 ? "Jeles" : j === 4 ? "Jó" : j === 3 ? "Közepes" : j === 2 ? "Elégséges" : "Elégtelen";
-        
-        let nev = prompt("Gratulálunk! Add meg a neved a bizonyítványhoz:");
-        if (!nev) nev = "Névtelen Tanuló";
-
-        let titkosKulcs = "suli2024"; 
-        let nyers = nev + j + temakor + titkosKulcs;
-        let hash = 0;
-        for (let i = 0; i < nyers.length; i++) {
-            hash = ((hash << 5) - hash) + nyers.charCodeAt(i);
-            hash |= 0;
-        }
-        let azonosito = "BIZ-" + Math.abs(hash).toString(16).toUpperCase();
-
-        g.innerHTML = `
-            <div id="cert" style="border: 10px double #2e7d32; padding: 30px; background: white; font-family: serif;">
-                <h1 style="color: #2e7d32;">BIZONYÍTVÁNY</h1>
-                <p>Ezúton igazoljuk, hogy <b>${nev}</b></p>
-                <p>a(z) <b>${temakor}</b> vizsgán</p>
-                <div style="font-size: 3em; font-weight: bold; margin: 10px 0;">${j} (${szovegesJegy})</div>
-                <p>Pontszám: ${examPoints}/100 | Idő: ${document.getElementById('exam-timer').innerText}</p>
-                <p style="font-size: 0.7em; color: #666;">Azonosító: ${azonosito} | Dátum: ${new Date().toLocaleString('hu-HU')}</p>
-            </div>
-            <button class="action-btn" onclick="window.print()" style="margin-top:20px; background:#2196F3;">💾 Mentés PDF / Nyomtatás</button>
-            <button class="action-btn" onclick="location.reload()" style="margin-top:20px; background:#9e9e9e;">Újra</button>
-        `;
+        let szoveges = j === 5 ? "Jeles" : j === 4 ? "Jó" : j === 3 ? "Közepes" : j === 2 ? "Elégséges" : "Elégtelen";
+        let nev = prompt("Add meg a neved:") || "Tanuló";
+        let hash = 0, nyers = nev + j + temakor + "suli2024";
+        for (let i = 0; i < nyers.length; i++) hash = ((hash << 5) - hash) + nyers.charCodeAt(i);
+        let azonosito = "BIZ-" + Math.abs(hash | 0).toString(16).toUpperCase();
+        g.innerHTML = `<div style="border:10px double #2e7d32; padding:20px; background:white;"><h1>BIZONYÍTVÁNY</h1><h2>${nev}</h2><p>${temakor}</p><div style="font-size:3em;">${j} (${szoveges})</div><p>Pont: ${examPoints}/100 | Kód: ${azonosito}</p></div><button class="action-btn" onclick="window.print()">Mentés PDF</button><button class="action-btn" onclick="location.reload()">Újra</button>`;
     }
 </script>
 </body>
