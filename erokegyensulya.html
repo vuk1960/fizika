@@ -219,14 +219,65 @@
         b.style.display = "block";
         b.innerHTML = solLog;
     }
+async function finishExam() {
+    clearInterval(timerInterval);
+    
+    // --- 1. IP CÍM LEKÉRÉSE (Választható, de jó azonosító) ---
+    let ip = "Lekérés alatt...";
+    try {
+        const response = await fetch('https://api.ipify.org');
+        const data = await response.json();
+        ip = data.ip;
+    } catch (e) { ip = "Ismeretlen"; }
 
-    function finishExam() {
-        clearInterval(timerInterval);
-        const g = document.getElementById('grade-display');
-        g.style.display = "block";
-        let j = examPoints >= 90 ? 5 : examPoints >= 70 ? 4 : examPoints >= 50 ? 3 : examPoints >= 30 ? 2 : 1;
-        g.innerHTML = `<h2>Eredmény</h2><p>Pontszám: ${examPoints}/100</p><h3>Jegy: ${j}</h3><button class="action-btn" onclick="setMode('gyak')">Újra</button>`;
+    // --- 2. JEGY ÉS NÉV ---
+    let j = examPoints >= 90 ? 5 : examPoints >= 70 ? 4 : examPoints >= 50 ? 3 : examPoints >= 30 ? 2 : 1;
+    let nev = prompt("Gratulálunk! Add meg a neved a bizonyítványhoz:");
+    if (!nev) nev = "Névtelen Tanuló";
+
+    // --- 3. EGYEDI KÓD GENERÁLÁSA (Név + Jegy + Titkos kulcs) ---
+    let titkosKulcs = "Refi7B"; 
+    let nyers = nev + j + titkosKulcs;
+    let hash = 0;
+    for (let i = 0; i < nyers.length; i++) {
+        hash = ((hash << 5) - hash) + nyers.charCodeAt(i);
+        hash |= 0;
     }
+    let azonosito = "BIZ-" + Math.abs(hash).toString(16).toUpperCase();
+
+    // --- 4. EMAIL ADATOK ÖSSZEÁLLÍTÁSA ---
+    const sajatEmail = "vuk1960@gmail.com"; // <--- IDE ÍRD AZ EMAIL CÍMEDET!
+    const targy = encodeURIComponent(`BIZONYÍTVÁNY - ${nev} - Jegy: ${j}`);
+    const uzenet = encodeURIComponent(
+        `Tisztelt Tanár Úr!\n\n` +
+        `Sikeresen teljesítettem a feladatot.\n` +
+        `Név: ${nev}\n` +
+        `Jegy: ${j}\n` +
+        `Pontszám: ${examPoints}/100\n` +
+        `IP azonosító: ${ip}\n` +
+        `Ellenőrző kód: ${azonosito}\n\n` +
+        `Dátum: ${new Date().toLocaleString('hu-HU')}`
+    );
+
+    const mailtoLink = `mailto:${sajatEmail}?subject=${targy}&body=${uzenet}`;
+
+    // --- 5. MEGJELENÍTÉS A WEBOLDALON ---
+    const g = document.getElementById('grade-display');
+    g.style.display = "block";
+    g.innerHTML = `
+        <h2>Eredmény</h2>
+        <p>Tanuló: <b>${nev}</b></p>
+        <p>Jegy: <b>${j}</b> (${examPoints}/100 pont)</p>
+        <p style="font-size: 0.8em; color: gray;">Kód: ${azonosito}</p>
+        <hr>
+        <button class="action-btn" onclick="window.location.href='${mailtoLink}'" style="background-color: #4CAF50; color: white; padding: 10px;">
+             📧 Bizonyítvány beküldése emailben
+        </button>
+        <br><br>
+        <button class="action-btn" onclick="setMode('gyak')">Újra</button>
+    `;
+}
+ 
 
     generateTask();
 </script>
