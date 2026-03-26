@@ -19,13 +19,10 @@
         .solution { display: none; background: #fffde7; padding: 15px; border-radius: 8px; border: 1px solid #fbc02d; margin-top: 15px; line-height: 1.6; }
         .timer { font-size: 1.5em; font-weight: bold; text-align: right; color: #d32f2f; margin-bottom: 10px; }
         .grade-box { display: none; text-align: center; padding: 30px; border: 5px solid #1a237e; border-radius: 15px; background: #e8eaf6; margin-top: 20px; }
-        
-        /* Nyomtatási stílus, hogy csak a bizonyítvány látsszon */
         @media print {
             body * { visibility: hidden; }
             #grade-display, #grade-display * { visibility: visible; }
-            #grade-display { position: absolute; left: 0; top: 0; width: 100%; border: none; }
-            .action-btn { display: none; }
+            #grade-display { position: absolute; left: 0; top: 0; width: 100%; border: none; display: block !important; }
         }
     </style>
 </head>
@@ -34,37 +31,29 @@
 <div class="card">
     <div id="exam-timer" class="timer" style="display:none;">00:00</div>
     <h1 style="text-align:center; color: #1a237e;">Erők egyensúlya</h1>
-    <h1 style="text-align:right; color: #1a237e; font-size: 1rem;"> <a href="index.html">← Vissza a főoldalra</a></h1>
+    <h1 style="text-align:right; font-size: 1rem;"> <a href="index.html">← Vissza</a></h1>
     
     <div class="mode-selector">
         <button id="mode-gyak" class="mode-btn active" onclick="setMode('gyak')">Gyakorlás</button>
         <button id="mode-felel" class="mode-btn" onclick="setMode('felel')">Felelés (5 feladat)</button>
     </div>
 
-    <div class="exercise-area">
+    <div class="exercise-area" id="main-area">
         <div id="progress-text" style="font-weight:bold; color:#1a237e; margin-bottom:10px; display:none;"></div>
-        <div id="illustration" class="illustration">
-            <svg id="main-svg" width="700" height="250" viewBox="0 0 700 250"></svg>
-        </div>
-
+        <div class="illustration"><svg id="main-svg" width="600" height="200"></svg></div>
         <div class="input-section">
-            <div>
-                <span id="label-text" style="font-weight:bold">Keresett érték</span>: 
-                <input type="number" id="user-ans" step="0.1"> <span id="unit-text"></span>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center; margin-left:20px;">
-                <span style="font-weight:bold">Várható irány:</span>
+            <span id="label-text"></span>: <input type="number" id="user-ans" step="0.1"> <span id="unit-text"></span>
+            <div style="margin-left:20px;">
                 <button id="dir-up" class="dir-btn" onclick="selectDir('up')">Fel ↑</button>
                 <button id="dir-down" class="dir-btn" onclick="selectDir('down')">Le ↓</button>
             </div>
         </div>
-
-        <div id="controls" style="margin-top: 25px; text-align:center;">
-            <button class="action-btn" id="check-btn" onclick="checkAnswer()">Ellenőrzés</button>
+        <div style="text-align:center; margin-top:20px;">
+            <button class="action-btn" onclick="checkAnswer()">Ellenőrzés</button>
             <button class="action-btn" style="background:#673ab7" onclick="generateTask()">Új feladat</button>
-            <button class="action-btn" style="background:#0288d1" onclick="showSolution()">Súgó / Megoldás</button>
+            <button class="action-btn" style="background:#0288d1" onclick="showSolution()">Súgó</button>
         </div>
-        <div id="feedback" style="margin-top: 15px; font-weight: bold; text-align: center; font-size: 1.2em;"></div>
+        <div id="feedback" style="text-align:center; margin-top:10px; font-weight:bold;"></div>
         <div id="solution-box" class="solution"></div>
     </div>
     <div id="grade-display" class="grade-box"></div>
@@ -72,10 +61,9 @@
 
 <script>
     let appMode = 'gyak', examStep = 0, examPoints = 0, seconds = 0, timerInterval;
-    let forces = [], targetVal = 0, targetUp = false, missing = '', solLog = '';
-    let selDir = null;
-    let cheated = false; // ÚJ VÁLTOZÓ a csalás figyelésére
-    const cX = 350, cY = 125, gap = 45;
+    let targetVal = 0, targetUp = false, solSeen = false, selDir = null;
+
+    window.onload = generateTask;
 
     function selectDir(d) {
         selDir = d;
@@ -87,169 +75,81 @@
         appMode = m;
         document.getElementById('mode-gyak').className = 'mode-btn' + (m === 'gyak' ? ' active' : '');
         document.getElementById('mode-felel').className = 'mode-btn' + (m === 'felel' ? ' active' : '');
-        if(m === 'felel') startExam(); else stopExam();
+        if(m === 'felel') startExam(); else { clearInterval(timerInterval); document.getElementById('exam-timer').style.display='none'; generateTask(); }
     }
 
     function startExam() {
         examStep = 1; examPoints = 0; seconds = 0;
-        document.getElementById('exam-timer').style.display = 'block';
         document.getElementById('progress-text').style.display = 'block';
+        document.getElementById('exam-timer').style.display = 'block';
         document.getElementById('grade-display').style.display = 'none';
+        document.getElementById('main-area').style.display = 'block';
         clearInterval(timerInterval);
-        timerInterval = setInterval(() => { seconds++; updateTimerDisplay(); }, 1000);
+        timerInterval = setInterval(() => {
+            seconds++;
+            let m = Math.floor(seconds/60).toString().padStart(2,'0'), s = (seconds%60).toString().padStart(2,'0');
+            document.getElementById('exam-timer').innerText = `${m}:${s}`;
+        }, 1000);
         generateTask();
-    }
-
-    function stopExam() {
-        clearInterval(timerInterval);
-        document.getElementById('exam-timer').style.display = 'none';
-        document.getElementById('progress-text').style.display = 'none';
-        generateTask();
-    }
-
-    function updateTimerDisplay() {
-        let m = Math.floor(seconds/60).toString().padStart(2,'0'), s = (seconds%60).toString().padStart(2,'0');
-        document.getElementById('exam-timer').innerText = `${m}:${s}`;
-    }
-
-    // Segédfüggvény az erők hozzáadásához (mivel a kódból hiányzott)
-    function addForce(side) {
-        return {
-            val: Math.floor(Math.random() * 50) + 10,
-            dist: (Math.floor(Math.random() * 5) + 1),
-            up: Math.random() > 0.5,
-            side: side
-        };
     }
 
     function generateTask() {
-        cheated = false; // Minden új feladatnál tiszta lappal indul
-        const svg = document.getElementById('main-svg');
-        selDir = null;
+        solSeen = false; selDir = null;
         document.getElementById('dir-up').classList.remove('selected');
         document.getElementById('dir-down').classList.remove('selected');
         document.getElementById('feedback').innerText = "";
         document.getElementById('solution-box').style.display = "none";
         document.getElementById('user-ans').value = "";
-        
-        svg.innerHTML = `
-            <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="red"/></marker></defs>
-            <line x1="50" y1="${cY}" x2="650" y2="${cY}" stroke="#5d4037" stroke-width="6" stroke-linecap="round" />
-            <polygon points="${cX},${cY} ${cX-15},${cY+30} ${cX+15},${cY+30}" fill="#1a237e" />
-        `;
-
         if(appMode === 'felel') document.getElementById('progress-text').innerText = `Feladat: ${examStep} / 5`;
 
-        let lNum = Math.floor(Math.random()*2)+1;
-        let rNum = Math.floor(Math.random()*2)+1;
-        forces = [];
-        for(let i=0; i<lNum; i++) forces.push(addForce(-1));
-        for(let i=0; i<rNum; i++) forces.push(addForce(1));
+        let f1 = Math.floor(Math.random() * 40) + 10;
+        let k1 = Math.floor(Math.random() * 4) + 1;
+        let k2 = Math.floor(Math.random() * 4) + 1;
+        targetVal = (f1 * k1) / k2;
+        targetUp = true; 
 
-        let sumM = 0;
-        solLog = "<b>Számítás:</b><br>";
-        for(let i=0; i<forces.length-1; i++) {
-            let f = forces[i];
-            let m = (f.side === -1) ? (f.up ? -f.val*f.dist : f.val*f.dist) : (f.up ? f.val*f.dist : -f.val*f.dist);
-            sumM += m;
-            // Itt rajzolnád az erőket az SVG-re... (rövidítve a példa kedvéért)
-        }
-
-        let q = forces[forces.length-1];
-        let neededM = -sumM;
-        missing = Math.random() > 0.5 ? 'F' : 'k';
+        document.getElementById('label-text').innerText = "F2 erő értéke";
+        document.getElementById('unit-text').innerText = "N";
         
-        if(missing === 'F') {
-            targetVal = Math.abs(neededM / q.dist);
-            document.getElementById('label-text').innerText = "Hiányzó erő (F)";
-            document.getElementById('unit-text').innerText = "N";
-        } else {
-            targetVal = Math.abs(neededM / 10); // példa érték
-            document.getElementById('label-text').innerText = "Hiányzó kar (k)";
-            document.getElementById('unit-text').innerText = "m";
-        }
-        targetUp = (q.side === -1) ? (neededM < 0) : (neededM > 0);
+        const svg = document.getElementById('main-svg');
+        svg.innerHTML = `
+            <line x1="50" y1="100" x2="550" y2="100" stroke="black" stroke-width="4"/>
+            <polygon points="300,100 285,130 315,130" fill="blue"/>
+            <text x="${300 - k1*50}" y="80" fill="red">F1 = ${f1}N (k1=${k1}m)</text>
+            <text x="${300 + k2*50}" y="80" fill="blue">F2 = ? (k2=${k2}m)</text>
+        `;
     }
 
     function showSolution() {
-        if(appMode === 'felel') {
-            cheated = true; // Megjelöljük, hogy segítséget kért
-            alert("Súgó használata esetén erre a feladatra nem kapsz pontot!");
-        }
-        document.getElementById('solution-box').innerHTML = solLog + `<br><b>Megoldás:</b> ${targetVal.toFixed(1)} ${missing==='F'?'N':'m'}, Irány: ${targetUp?'Fel':'Le'}`;
+        if(appMode === 'felel') { solSeen = true; alert("Súgóval nincs pont!"); }
+        document.getElementById('solution-box').innerHTML = `Képlet: F1·k1 = F2·k2 <br> Megoldás: ${targetVal.toFixed(1)} N, Irány: Fel`;
         document.getElementById('solution-box').style.display = "block";
     }
 
     function checkAnswer() {
         let uVal = parseFloat(document.getElementById('user-ans').value);
-        let isCorrect = Math.abs(uVal - targetVal) < 0.2 && ((targetUp && selDir==='up') || (!targetUp && selDir==='down'));
-
-        if(isCorrect) {
+        if(Math.abs(uVal - targetVal) < 0.2 && selDir === 'up') {
             if(appMode === 'felel') {
-                if(!cheated) {
-                    examPoints += 20; // Csak akkor jár pont, ha nem csalt
-                    document.getElementById('feedback').innerText = "Helyes! +20 pont";
-                } else {
-                    document.getElementById('feedback').innerText = "Helyes, de súgót használtál, így 0 pont.";
-                }
-                
-                if(examStep < 5) {
-                    examStep++;
-                    setTimeout(generateTask, 1500);
-                } else {
-                    finishExam("Erők egyensúlya");
-                }
-            } else {
-                document.getElementById('feedback').innerText = "Helyes!";
-            }
+                if(!solSeen) examPoints += 20;
+                if(examStep < 5) { examStep++; generateTask(); } else finishExam("Erők egyensúlya");
+            } else document.getElementById('feedback').innerText = "Helyes!";
         } else {
-            document.getElementById('feedback').innerText = "Sajnos hibás.";
-            if(appMode === 'felel') {
-                if(examStep < 5) {
-                    examStep++;
-                    setTimeout(generateTask, 1500);
-                } else {
-                    finishExam("Erők egyensúlya");
-                }
-            }
+            document.getElementById('feedback').innerText = "Hibás!";
+            if(appMode === 'felel') { if(examStep < 5) { examStep++; generateTask(); } else finishExam("Erők egyensúlya"); }
         }
     }
 
-    function finishExam(temakor) { 
+    function finishExam("Erők egyensúlya") {
         clearInterval(timerInterval);
         const g = document.getElementById('grade-display');
         g.style.display = "block";
-        document.querySelector('.exercise-area').style.display = "none";
-        
+        document.getElementById('main-area').style.display = "none";
         let j = examPoints >= 90 ? 5 : examPoints >= 70 ? 4 : examPoints >= 50 ? 3 : examPoints >= 30 ? 2 : 1;
-        let szovegesJegy = j === 5 ? "Jeles" : j === 4 ? "Jó" : j === 3 ? "Közepes" : j === 2 ? "Elégséges" : "Elégtelen";
-        
-        let nev = prompt("Gratulálunk! Add meg a neved a bizonyítványhoz:");
-        if (!nev) nev = "Névtelen Tanuló";
-
-        let titkosKulcs = "suli2024"; 
-        let nyers = nev + j + temakor + titkosKulcs;
-        let hash = 0;
-        for (let i = 0; i < nyers.length; i++) {
-            hash = ((hash << 5) - hash) + nyers.charCodeAt(i);
-            hash |= 0;
-        }
-        let azonosito = "BIZ-" + Math.abs(hash).toString(16).toUpperCase();
-        let datum = new Date().toLocaleString('hu-HU');
-
-        g.innerHTML = `
-            <div id="cert-container" style="border: 10px double #4CAF50; padding: 30px; background: white; text-align: center; font-family: serif; color: black;">
-                <h1 style="color: #2E7D32;">BIZONYÍTVÁNY</h1>
-                <p>Ezúton igazoljuk, hogy</p>
-                <h2 style="text-decoration: underline;">${nev}</h2>
-                <p>a(z) <b>${temakor}</b> témakörben</p>
-                <div style="font-size: 3em; font-weight: bold; color: #1B5E20;">${j} (${szovegesJegy})</div>
-                <p>Pontszám: ${examPoints}/100 | Idő: ${document.getElementById('exam-timer').innerText}</p>
-                <p style="font-size: 0.7em; color: #999;">Hitelesítő kód: ${azonosito} | Dátum: ${datum}</p>
-            </div>
-            <button class="action-btn" onclick="window.print()" style="margin-top:20px; background:#2196F3;">💾 Mentés PDF / Nyomtatás</button>
-            <button class="action-btn" onclick="location.reload()" style="margin-top:20px; background:#9e9e9e;">Újra</button>
-        `;
+        let nev = prompt("Add meg a neved:") || "Tanuló";
+        let nyers = nev + j + temakor + "suli2024";
+        let hash = 0; for (let i = 0; i < nyers.length; i++) hash = ((hash << 5) - hash) + nyers.charCodeAt(i);
+        let azonosito = "BIZ-" + Math.abs(hash | 0).toString(16).toUpperCase();
+        g.innerHTML = `<div style="border:10px double #1a237e; padding:20px; background:white;"><h1>BIZONYÍTVÁNY</h1><h2>${nev}</h2><p>${temakor}</p><div style="font-size:3em;">${j}</div><p>Pont: ${examPoints}/100 | Kód: ${azonosito}</p></div><button class="action-btn" onclick="window.print()">Mentés PDF</button><button class="action-btn" onclick="location.reload()">Újra</button>`;
     }
 </script>
 </body>
