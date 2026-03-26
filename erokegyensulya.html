@@ -219,64 +219,59 @@
         b.style.display = "block";
         b.innerHTML = solLog;
     }
-async function finishExam() {
+function finishExam(Erők egyensúlya) { 
     clearInterval(timerInterval);
     
-    // --- 1. IP CÍM LEKÉRÉSE (Választható, de jó azonosító) ---
-    let ip = "Lekérés alatt...";
-    try {
-        const response = await fetch('https://api.ipify.org');
-        const data = await response.json();
-        ip = data.ip;
-    } catch (e) { ip = "Ismeretlen"; }
-
-    // --- 2. JEGY ÉS NÉV ---
+    // 1. Jegy kiszámítása (a te eredeti logikád)
     let j = examPoints >= 90 ? 5 : examPoints >= 70 ? 4 : examPoints >= 50 ? 3 : examPoints >= 30 ? 2 : 1;
+    
+    // 2. Szöveges értékelés hozzárendelése (HOGY NE LEGYEN MINDENKI JELES)
+    let szovegesJegy = j === 5 ? "Jeles" : j === 4 ? "Jó" : j === 3 ? "Közepes" : j === 2 ? "Elégséges" : "Elégtelen";
+    
+    // 3. Név bekérése
     let nev = prompt("Gratulálunk! Add meg a neved a bizonyítványhoz:");
     if (!nev) nev = "Névtelen Tanuló";
 
-    // --- 3. EGYEDI KÓD GENERÁLÁSA (Név + Jegy + Titkos kulcs) ---
-    let titkosKulcs = "Refi7B"; 
-    let nyers = nev + j + titkosKulcs;
+    // 4. Ellenőrző kód generálása
+    let titkosKulcs = "suli2024"; 
+    let nyers = nev + j + temakor + titkosKulcs;
     let hash = 0;
     for (let i = 0; i < nyers.length; i++) {
         hash = ((hash << 5) - hash) + nyers.charCodeAt(i);
         hash |= 0;
     }
     let azonosito = "BIZ-" + Math.abs(hash).toString(16).toUpperCase();
+    let datum = new Date().toLocaleString('hu-HU');
 
-    // --- 4. EMAIL ADATOK ÖSSZEÁLLÍTÁSA ---
-    const sajatEmail = "vuk1960@gmail.com"; // <--- IDE ÍRD AZ EMAIL CÍMEDET!
-    const targy = encodeURIComponent(`BIZONYÍTVÁNY - ${nev} - Jegy: ${j}`);
-    const uzenet = encodeURIComponent(
-        `Tisztelt Tanár Úr!\n\n` +
-        `Sikeresen teljesítettem a feladatot.\n` +
-        `Név: ${nev}\n` +
-        `Jegy: ${j}\n` +
-        `Pontszám: ${examPoints}/100\n` +
-        `IP azonosító: ${ip}\n` +
-        `Ellenőrző kód: ${azonosito}\n\n` +
-        `Dátum: ${new Date().toLocaleString('hu-HU')}`
-    );
-
-    const mailtoLink = `mailto:${sajatEmail}?subject=${targy}&body=${uzenet}`;
-
-    // --- 5. MEGJELENÍTÉS A WEBOLDALON ---
     const g = document.getElementById('grade-display');
     g.style.display = "block";
+    
+    // 5. A bizonyítvány megjelenítése (Dinamikus jeggyel és szöveggel)
     g.innerHTML = `
-        <h2>Eredmény</h2>
-        <p>Tanuló: <b>${nev}</b></p>
-        <p>Jegy: <b>${j}</b> (${examPoints}/100 pont)</p>
-        <p style="font-size: 0.8em; color: gray;">Kód: ${azonosito}</p>
-        <hr>
-        <button class="action-btn" onclick="window.location.href='${mailtoLink}'" style="background-color: #4CAF50; color: white; padding: 10px;">
-             📧 Bizonyítvány beküldése emailben
+        <div id="cert-container" style="border: 10px double #4CAF50; padding: 30px; background: white; text-align: center; font-family: 'Times New Roman', serif; max-width: 500px; margin: 0 auto; color: black;">
+            <h1 style="color: #2E7D32; margin-bottom: 5px;">BIZONYÍTVÁNY</h1>
+            <hr style="width: 80%; border: 1px solid #ccc;">
+            <p style="font-size: 1.2em; margin-top: 20px;">Ezúton igazoljuk, hogy</p>
+            <h2 style="font-size: 1.8em; margin: 10px 0; border-bottom: 1px solid #eee; display: inline-block; min-width: 200px;">${nev}</h2>
+            <p style="font-size: 1.1em;">a(z) <b>${temakor}</b> témakörben</p>
+            
+            <div style="font-size: 3.5em; font-weight: bold; margin: 15px 0; color: #1B5E20;">
+                ${j} <span style="font-size: 0.5em; vertical-align: middle;">(${szovegesJegy})</span>
+            </div>
+            
+            <p>Elért pontszám: <b>${examPoints}/100</b></p>
+            <p style="font-size: 0.8em; color: #666; margin-top: 30px;">Kiállítás dátuma: ${datum}</p>
+            <p style="font-size: 0.7em; color: #999;">Hitelesítő kód: ${azonosito}</p>
+        </div>
+        <br>
+        <button class="action-btn" onclick="window.print()" style="background: #2196F3; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em;">
+            💾 MENTÉS PDF / NYOMTATÁS
         </button>
-        <br><br>
-        <button class="action-btn" onclick="setMode('gyak')">Újra</button>
+        <button class="action-btn" onclick="setMode('gyak')" style="margin-left: 10px; background: #9e9e9e; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer;">Újra</button>
     `;
 }
+
+
  
 
     generateTask();
