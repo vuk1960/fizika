@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Fonálinga Gyorsulás Szimuláció</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; }
+        canvas { background: white; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .info { margin-top: 10px; text-align: center; line-height: 1.5; }
+        .critical { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>Fonálinga: Eredő gyorsulás vizualizáció</h2>
+    <canvas id="pendulumCanvas" width="600" height="500"></canvas>
+    
+    <div class="info" id="stats">
+        Szög: <span id="angleDisp">0</span>°<br>
+        Függőleges gyorsulás (ay): <span id="ayDisp">0</span><br>
+        <div id="msg"></div>
+    </div>
+
+<script>
+const canvas = document.getElementById('pendulumCanvas');
+const ctx = canvas.getContext('2d');
+const angleDisp = document.getElementById('angleDisp');
+const ayDisp = document.getElementById('ayDisp');
+const msg = document.getElementById('msg');
+
+// Fizikai konstansok
+const g = 9.81;
+const L = 1.0;
+const scale = 200; // Megjelenítési skála (pixel/méter)
+const vScale = 10; // Gyorsulásvektorok skálázása
+
+// Kezdeti állapot (vízszintes indítás)
+let theta = Math.PI / 2;
+let omega = 0;
+let dt = 0.016; // ~60 FPS
+
+const critThetaRad = Math.acos(Math.sqrt(1/3));
+const critThetaDeg = (critThetaRad * 180 / Math.PI).toFixed(2);
+
+function drawVector(x, y, vx, vy, color, label) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + vx * vScale, y + vy * vScale);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Nyílhegy
+    ctx.fillStyle = color;
+    ctx.arc(x + vx * vScale, y + vy * vScale, 3, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function update() {
+    // 1. Fizika: RK4 helyett most egyszerű Euler-Cromer a szemléltetéshez
+    let alpha = -(g / L) * Math.sin(theta);
+    omega += alpha * dt;
+    theta += omega * dt;
+
+    // 2. Számítások az eredőhöz
+    let x = 300 + L * Math.sin(theta) * scale;
+    let y = 50 + L * Math.cos(theta) * scale;
+
+    // Gravitáció (fix lefelé)
+    let gx = 0, gy = g;
+    
+    // Fonálirányú gyorsulás (K/m)
+    let tension_a = g * Math.cos(theta) + L * (omega * omega);
+    let tx = -tension_a * Math.sin(theta);
+    let ty = -tension_a * Math.cos(theta); // Felfelé mutat a felfüggesztés felé
+
+    // Eredő
+    let ax_total = gx + tx;
+    let ay_total = gy + ty;
+
+    // 3. Rajzolás
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Felfüggesztés
+    ctx.beginPath();
+    ctx.moveTo(300, 50);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = '#999';
+    ctx.stroke();
+
+    // Kritikus szög vonala
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(300, 50);
+    ctx.lineTo(300 + Math.sin(critThetaRad)*L*scale, 50 + Math.cos(critThetaRad)*L*scale);
+    ctx.strokeStyle = 'rgba(255,0,0,0.3)';
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Inga feje
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, Math.PI * 2);
+    ctx.fillStyle = 'black';
+    ctx.fill();
+
+    // Vektorok kirajzolása
+    drawVector(x, y, gx, gy, 'black', 'g');          // Gravitáció
+    drawVector(x, y, tx, ty, 'blue', 'Fonál');       // Fonál gyorsítása
+    drawVector(x, y, ax_total, ay_total, 'red', 'a'); // Eredő
+
+    // UI frissítés
+    let deg = (theta * 180 / Math.PI).toFixed(2);
+    angleDisp.innerText = deg;
+    ayDisp.innerText = ay_total.toFixed(2);
+
+    if (Math.abs(ay_total) < 0.3) {
+        msg.innerHTML = `<span class="critical">VÍZSZINTES GYORSULÁS! (Kritikus szög: ${critThetaDeg}°)</span>`;
+    } else {
+        msg.innerHTML = "";
+    }
+
+    requestAnimationFrame(update);
+}
+
+update();
+</script>
+</body>
+</html>
