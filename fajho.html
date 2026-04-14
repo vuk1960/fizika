@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Molekula Szimulátor és Fajhő</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; width: 100%; max-width: 800px; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        /* Animációs tér */
+        #canvas-container { 
+            height: 250px; background: #1a1a2e; border-radius: 12px; 
+            position: relative; overflow: hidden; margin-bottom: 20px;
+            border: 3px solid #34495e;
+        }
+        .molecule { position: absolute; display: flex; justify-content: center; align-items: center; }
+        .atom { width: 14px; height: 14px; background: #3498db; border-radius: 50%; border: 1px solid white; position: absolute; }
+        .bond { position: absolute; background: white; height: 2px; transform-origin: left center; }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #eef2f7; padding: 15px; border-radius: 10px; }
+        .result-box { border-left: 5px solid #3498db; background: #f8fbff; padding: 20px; margin-top: 20px; line-height: 1.8; }
+        .math-line { font-family: monospace; font-size: 1.1em; color: #2c3e50; display: block; margin: 5px 0; }
+        b { color: #e67e22; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2 style="text-align:center">Molekulaszerkezet és Fajhő</h2>
+    
+    <div id="canvas-container"></div>
+
+    <div class="controls">
+        <div>
+            <label><b>Gáz szerkezete:</b></label>
+            <select id="gasType" onchange="initSim()">
+                <option value="3" data-name="Nemesgáz (pl. He)">Egyatomos (f=3)</option>
+                <option value="5" data-name="Kétatomos (pl. H₂, O₂)" selected>Kétatomos (f=5)</option>
+                <option value="6" data-name="Többatomos (pl. CH₄)">Többatomos (f=6)</option>
+            </select>
+        </div>
+        <div>
+            <label><b>Moláris tömeg (g/mol):</b></label>
+            <input type="number" id="molarMass" value="2.016" step="0.001" oninput="updateCalculations()">
+        </div>
+    </div>
+
+    <div class="result-box">
+        <h3 id="displayTitle">Számítás:</h3>
+        
+        <span>1. Moláris hőkapacitás (C<sub>v</sub>):</span>
+        <span class="math-line" id="calc-cv-mol"></span>
+
+        <span>2. Fajhő (c<sub>v</sub>) osztva a tömeggel (M):</span>
+        <span class="math-line" id="calc-cv-faj"></span>
+
+        <span>3. Eredmény állandó nyomáson (c<sub>p</sub>):</span>
+        <span class="math-line" id="calc-cp"></span>
+    </div>
+</div>
+
+<script>
+    const container = document.getElementById('canvas-container');
+    let molecules = [];
+    const R = 8.314;
+
+    function initSim() {
+        container.innerHTML = '';
+        molecules = [];
+        const f = parseInt(document.getElementById('gasType').value);
+        
+        for(let i=0; i<6; i++) {
+            const molDiv = document.createElement('div');
+            molDiv.className = 'molecule';
+            
+            // Atomok rajzolása szerkezet szerint
+            if(f >= 3) createAtom(molDiv, 0, 0); // Első atom
+            if(f >= 5) { // Második atom + kötés
+                createAtom(molDiv, 25, 0);
+                createBond(molDiv, 0, 0, 25);
+            }
+            if(f >= 6) { // Harmadik atom (háromszög)
+                createAtom(molDiv, 12, 20);
+                createBond(molDiv, 0, 0, 23, 60);
+                createBond(molDiv, 25, 0, 23, 120);
+            }
+
+            container.appendChild(molDiv);
+            molecules.push({
+                el: molDiv,
+                x: Math.random() * 80 + 10,
+                y: Math.random() * 70 + 10,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                rot: Math.random() * 360,
+                vRot: (f - 2) * 0.5 // Több szabadságfok -> több mozgáslehetőség
+            });
+        }
+        updateCalculations();
+    }
+
+    function createAtom(parent, x, y) {
+        const a = document.createElement('div');
+        a.className = 'atom';
+        a.style.left = x + 'px';
+        a.style.top = y + 'px';
+        parent.appendChild(a);
+    }
+
+    function createBond(parent, x, y, w, deg = 0) {
+        const b = document.createElement('div');
+        b.className = 'bond';
+        b.style.width = w + 'px';
+        b.style.left = (x+7) + 'px';
+        b.style.top = (y+7) + 'px';
+        b.style.transform = `rotate(${deg}deg)`;
+        parent.appendChild(b);
+    }
+
+    function animate() {
+        molecules.forEach(m => {
+            m.x += m.vx; m.y += m.vy;
+            if(m.x < 0 || m.x > 90) m.vx *= -1;
+            if(m.y < 0 || m.y > 85) m.vy *= -1;
+            
+            m.rot += m.vRot;
+            m.el.style.left = m.x + '%';
+            m.el.style.top = m.y + '%';
+            m.el.style.transform = `rotate(${m.rot}deg)`;
+        });
+        requestAnimationFrame(animate);
+    }
+
+    function updateCalculations() {
+        const f = parseInt(document.getElementById('gasType').value);
+        const M_g = parseFloat(document.getElementById('molarMass').value);
+        const M_kg = M_g / 1000;
+        
+        const Cv_m = (f/2) * R;
+        const cv_f = Cv_m / M_kg;
+        const cp_f = (Cv_m + R) / M_kg;
+
+        document.getElementById('displayTitle').innerText = document.getElementById('gasType').options[document.getElementById('gasType').selectedIndex].getAttribute('data-name');
+        document.getElementById('calc-cv-mol').innerHTML = `C<sub>v,mol</sub> = (${f}/2) &times; 8.314 = <b>${Cv_m.toFixed(2)} J/molK</b>`;
+        document.getElementById('calc-cv-faj').innerHTML = `c<sub>v</sub> = ${Cv_m.toFixed(2)} / ${M_kg.toFixed(5)} kg/mol = <b>${(cv_f/1000).toFixed(2)} kJ/kgK</b>`;
+        document.getElementById('calc-cp').innerHTML = `c<sub>p</sub> = c<sub>v</sub> + (R/M) = <b>${(cp_f/1000).toFixed(2)} kJ/kgK</b>`;
+    }
+
+    initSim();
+    animate();
+</script>
+
+</body>
+</html>

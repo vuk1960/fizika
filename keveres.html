@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Gázkeveredés Szimulátor v2</title>
+    <style>
+        body { font-family: sans-serif; background: #1e293b; color: white; display: flex; flex-direction: column; align-items: center; padding: 10px; }
+        .container { background: #334155; padding: 20px; border-radius: 15px; width: 95%; max-width: 900px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        #box { 
+            width: 100%; height: 350px; background: #0f172a; position: relative; 
+            border: 4px solid #64748b; border-radius: 8px; overflow: hidden; margin: 15px 0;
+        }
+        #divider { 
+            position: absolute; left: 50%; top: 0; width: 6px; height: 100%; 
+            background: #ef4444; z-index: 10; transition: transform 0.4s ease-in-out;
+        }
+        
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .side-control { background: #475569; padding: 12px; border-radius: 10px; }
+        
+        /* Molekula stílusok */
+        .molecule { position: absolute; transform-origin: center; }
+        .atom { width: 10px; height: 10px; border-radius: 50%; position: absolute; border: 1px solid rgba(255,255,255,0.3); }
+        .bond { position: absolute; background: rgba(255,255,255,0.4); height: 2px; top: 4px; left: 5px; width: 12px; }
+
+        .btn-group { grid-column: span 2; display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 12px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .mix-btn { background: #22c55e; color: white; }
+        .reset-btn { background: #64748b; color: white; }
+        .btn:hover { opacity: 0.8; }
+        
+        .results { margin-top: 15px; padding: 10px; background: #0f172a; border-radius: 8px; text-align: center; border: 1px solid #475569; }
+        b { color: #fbbf24; font-family: monospace; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align:center; margin:0;">Gázkeveredés és Szabadságfok</h2>
+    
+    <div id="box"><div id="divider"></div></div>
+
+    <div class="controls">
+        <div class="side-control">
+            <strong>Bal oldal (Kék)</strong><br>
+            Szerkezet: <select id="f1"><option value="3">Egyatomos (f=3)</option><option value="5" selected>Kétatomos (f=5)</option></select><br>
+            Mennyiség (n): <input type="number" id="n1" value="1.5" step="0.1" style="width:45px"> mol<br>
+            Hő (T): <input type="range" id="t1" min="100" max="1000" value="250"> <span>250</span> K
+        </div>
+
+        <div class="side-control">
+            <strong>Jobb oldal (Sárga)</strong><br>
+            Szerkezet: <select id="f2" onchange="resetSim()"><option value="3" selected>Egyatomos (f=3)</option><option value="5">Kétatomos (f=5)</option></select><br>
+            Mennyiség (n): <input type="number" id="n2" value="1.5" step="0.1" style="width:45px"> mol<br>
+            Hő (T): <input type="range" id="t2" min="100" max="1000" value="850"> <span>850</span> K
+        </div>
+
+        <div class="btn-group">
+            <button class="btn mix-btn" onclick="startMixing()">FAL ELTÁVOLÍTÁSA</button>
+            <button class="btn reset-btn" onclick="resetSim()">VISSZAÁLLÍTÁS</button>
+        </div>
+    </div>
+
+    <div class="results">
+        Közös hőmérséklet: <b id="res_t">-</b> K | 
+        Számítás: <small>(n₁f₁T₁ + n₂f₂T₂) / (n₁f₁ + n₂f₂)</small>
+    </div>
+</div>
+
+<script>
+    let molecules = [];
+    const box = document.getElementById('box');
+    const divider = document.getElementById('divider');
+    let isMixing = false;
+
+    function createMoleculeVisual(f, color) {
+        const mol = document.createElement('div');
+        mol.className = 'molecule';
+        const a1 = document.createElement('div');
+        a1.className = 'atom';
+        a1.style.background = color;
+        mol.appendChild(a1);
+
+        if (f == 5) {
+            const bond = document.createElement('div');
+            bond.className = 'bond';
+            const a2 = document.createElement('div');
+            a2.className = 'atom';
+            a2.style.background = color;
+            a2.style.left = '12px';
+            mol.appendChild(bond);
+            mol.appendChild(a2);
+        }
+        return mol;
+    }
+
+    function resetSim() {
+        isMixing = false;
+        divider.style.transform = 'translateY(0)';
+        document.getElementById('res_t').innerText = "-";
+        molecules.forEach(m => m.el.remove());
+        molecules = [];
+        
+        spawnSide('n1', 'f1', 't1', '#3498db', true);
+        spawnSide('n2', 'f2', 't2', '#fbbf24', false);
+    }
+
+    function spawnSide(nid, fid, tid, color, isLeft) {
+        const n = parseFloat(document.getElementById(nid).value);
+        const f = parseInt(document.getElementById(fid).value);
+        const t = parseFloat(document.getElementById(tid).value);
+        const count = Math.min(n * 12, 40); // Ne legyen túl sok a laggolás miatt
+        
+        for(let i=0; i<count; i++) {
+            const el = createMoleculeVisual(f, color);
+            box.appendChild(el);
+            molecules.push({
+                el: el,
+                f: f,
+                x: isLeft ? Math.random()*40 + 2 : Math.random()*40 + 55,
+                y: Math.random()*85 + 5,
+                vx: (Math.random()-0.5) * (Math.sqrt(t)/12),
+                vy: (Math.random()-0.5) * (Math.sqrt(t)/12),
+                rot: Math.random()*360,
+                vRot: f > 3 ? (Math.random()-0.5) * (t/100) : 0,
+                isLeft: isLeft
+            });
+        }
+    }
+
+    function startMixing() {
+        if(isMixing) return;
+        const n1 = parseFloat(document.getElementById('n1').value);
+        const f1 = parseInt(document.getElementById('f1').value);
+        const t1 = parseFloat(document.getElementById('t1').value);
+        const n2 = parseFloat(document.getElementById('n2').value);
+        const f2 = parseInt(document.getElementById('f2').value);
+        const t2 = parseFloat(document.getElementById('t2').value);
+
+        const tFinal = (n1*f1*t1 + n2*f2*t2) / (n1*f1 + n2*f2);
+        document.getElementById('res_t').innerText = tFinal.toFixed(1);
+        
+        divider.style.transform = 'translateY(-100%)';
+        isMixing = true;
+
+        // Sebesség és forgás kiegyenlítése a közös T-re
+        const newSpeedMult = Math.sqrt(tFinal)/12;
+        molecules.forEach(m => {
+            const angle = Math.atan2(m.vy, m.vx);
+            m.vx = Math.cos(angle) * newSpeedMult;
+            m.vy = Math.sin(angle) * newSpeedMult;
+            if(m.f > 3) m.vRot = (Math.random()-0.5) * (tFinal/100);
+        });
+    }
+
+    function animate() {
+        molecules.forEach(m => {
+            m.x += m.vx; m.y += m.vy; m.rot += m.vRot;
+            if(m.y < 2 || m.y > 93) m.vy *= -1;
+            if(m.x < 1 || m.x > 95) m.vx *= -1;
+            if(!isMixing) {
+                if(m.isLeft && m.x > 46) m.vx *= -1;
+                if(!m.isLeft && m.x < 51) m.vx *= -1;
+            }
+            m.el.style.left = m.x + '%';
+            m.el.style.top = m.y + '%';
+            m.el.style.transform = `rotate(${m.rot}deg)`;
+        });
+        requestAnimationFrame(animate);
+    }
+
+    // Csúszka érték kijelzése
+    document.querySelectorAll('input[type=range]').forEach(input => {
+        input.addEventListener('input', e => {
+            e.target.nextElementSibling.innerText = e.target.value;
+            if(!isMixing) resetSim();
+        });
+    });
+
+    resetSim();
+    animate();
+</script>
+
+</body>
+</html>
