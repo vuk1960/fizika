@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Gázok Fajhő Számítása</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #2c3e50; color: white; padding: 10px; }
+        td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
+        tr.gas-row { cursor: pointer; transition: background 0.2s; }
+        tr.gas-row:hover { background: #e1f5fe; }
+        
+        /* A levezetés stílusa - alapból rejtve */
+        .details { display: none; background: #f9f9f9; text-align: left; padding: 15px; font-family: monospace; border-left: 4px solid #3498db; }
+        .show { display: table-row; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Gázok fajhője és levezetése (f alapján)</h2>
+    <p><small><i>Kattints egy sorra a számításhoz!</i></small></p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Gáz</th>
+                <th>f</th>
+                <th>M (g/mol)</th>
+                <th>cv (kJ/kgK)</th>
+                <th>cp (kJ/kgK)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- HIDROGÉN -->
+            <tr class="gas-row" onclick="toggleDetails('h2')">
+                <td><b>Hidrogén (H₂)</b></td>
+                <td>5</td>
+                <td>2,016</td>
+                <td>10,31</td>
+                <td>14,43</td>
+            </tr>
+            <tr id="h2" class="details">
+                <td colspan="5">
+                    <strong>Levezetés (H₂):</strong><br>
+                    1. Moláris Cv = (f/2)*R = (5/2)*8,314 = 20,785 J/molK<br>
+                    2. Fajhő cv = Cv / M = 20,785 / 0,002016 kg/mol ≈ 10310 J/kgK<br>
+                    3. kJ-ban: <b>10,31 kJ/kgK</b>
+                </td>
+            </tr>
+
+            <!-- HÉLIUM -->
+            <tr class="gas-row" onclick="toggleDetails('he')">
+                <td><b>Hélium (He)</b></td>
+                <td>3</td>
+                <td>4,003</td>
+                <td>3,11</td>
+                <td>5,19</td>
+            </tr>
+            <tr id="he" class="details">
+                <td colspan="5">
+                    <strong>Levezetés (He):</strong><br>
+                    1. Moláris Cv = (3/2)*8,314 = 12,471 J/molK<br>
+                    2. Fajhő cv = 12,471 / 0,004003 kg/mol ≈ 3115 J/kgK<br>
+                    3. kJ-ban: <b>3,11 kJ/kgK</b>
+                </td>
+            </tr>
+
+            <!-- OXIGÉN -->
+            <tr class="gas-row" onclick="toggleDetails('o2')">
+                <td><b>Oxigén (O₂)</b></td>
+                <td>5</td>
+                <td>31,99</td>
+                <td>0,65</td>
+                <td>0,91</td>
+            </tr>
+            <tr id="o2" class="details">
+                <td colspan="5">
+                    <strong>Levezetés (O₂):</strong><br>
+                    1. Moláris Cv = (5/2)*8,314 = 20,785 J/molK<br>
+                    2. Fajhő cv = 20,785 / 0,03199 kg/mol ≈ 650 J/kgK<br>
+                    3. kJ-ban: <b>0,65 kJ/kgK</b>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleDetails(id) {
+        var element = document.getElementById(id);
+        if (element.style.display === "table-row") {
+            element.style.display = "none";
+        } else {
+            element.style.display = "table-row";
+        }
+    }
+</script>
+
+</body>
+</html>
