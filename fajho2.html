@@ -4,24 +4,24 @@
     <meta charset="UTF-8">
     <title>Gázok Fajhő Számítása</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #2c3e50; color: white; padding: 10px; }
-        td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
-        tr.gas-row { cursor: pointer; transition: background 0.2s; }
-        tr.gas-row:hover { background: #e1f5fe; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #2c3e50; color: white; padding: 15px; font-size: 14px; }
+        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+        tr.gas-row { cursor: pointer; transition: background 0.3s; font-weight: 500; }
+        tr.gas-row:hover { background: #f1f8ff; }
         
-        /* A levezetés stílusa - alapból rejtve */
-        .details { display: none; background: #f9f9f9; text-align: left; padding: 15px; font-family: monospace; border-left: 4px solid #3498db; }
-        .show { display: table-row; }
+        .details { display: none; background: #fcfcfc; text-align: left; padding: 20px; font-family: 'Courier New', Courier, monospace; border-left: 5px solid #3498db; font-size: 0.95em; }
+        .math { color: #2980b9; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Gázok fajhője és levezetése (f alapján)</h2>
-    <p><small><i>Kattints egy sorra a számításhoz!</i></small></p>
+    <h2>Gázok fajhője (c<sub>v</sub> és c<sub>p</sub>)</h2>
+    <p>Állandók: <b>R = 8,314 J/molK</b> | Képletek: <span class="math">c<sub>v</sub> = (f/2)*(R/M)</span> és <span class="math">c<sub>p</sub> = ((f+2)/2)*(R/M)</span></p>
     
     <table>
         <thead>
@@ -29,14 +29,14 @@
                 <th>Gáz</th>
                 <th>f</th>
                 <th>M (g/mol)</th>
-                <th>cv (kJ/kgK)</th>
-                <th>cp (kJ/kgK)</th>
+                <th>c<sub>v</sub> (kJ/kgK)</th>
+                <th>c<sub>p</sub> (kJ/kgK)</th>
             </tr>
         </thead>
         <tbody>
             <!-- HIDROGÉN -->
             <tr class="gas-row" onclick="toggleDetails('h2')">
-                <td><b>Hidrogén (H₂)</b></td>
+                <td>Hidrogén (H₂)</td>
                 <td>5</td>
                 <td>2,016</td>
                 <td>10,31</td>
@@ -45,15 +45,14 @@
             <tr id="h2" class="details">
                 <td colspan="5">
                     <strong>Levezetés (H₂):</strong><br>
-                    1. Moláris Cv = (f/2)*R = (5/2)*8,314 = 20,785 J/molK<br>
-                    2. Fajhő cv = Cv / M = 20,785 / 0,002016 kg/mol ≈ 10310 J/kgK<br>
-                    3. kJ-ban: <b>10,31 kJ/kgK</b>
+                    1. c<sub>v</sub> = (5/2) * (8,314 / 0,002016) = 2,5 * 4124 = 10310 J/kgK -> <b>10,31 kJ/kgK</b><br>
+                    2. c<sub>p</sub> = ((5+2)/2) * (8,314 / 0,002016) = 3,5 * 4124 = 14434 J/kgK -> <b>14,43 kJ/kgK</b>
                 </td>
             </tr>
 
             <!-- HÉLIUM -->
             <tr class="gas-row" onclick="toggleDetails('he')">
-                <td><b>Hélium (He)</b></td>
+                <td>Hélium (He)</td>
                 <td>3</td>
                 <td>4,003</td>
                 <td>3,11</td>
@@ -62,15 +61,30 @@
             <tr id="he" class="details">
                 <td colspan="5">
                     <strong>Levezetés (He):</strong><br>
-                    1. Moláris Cv = (3/2)*8,314 = 12,471 J/molK<br>
-                    2. Fajhő cv = 12,471 / 0,004003 kg/mol ≈ 3115 J/kgK<br>
-                    3. kJ-ban: <b>3,11 kJ/kgK</b>
+                    1. c<sub>v</sub> = (3/2) * (8,314 / 0,004003) = 1,5 * 2077 = 3115 J/kgK -> <b>3,11 kJ/kgK</b><br>
+                    2. c<sub>p</sub> = ((3+2)/2) * (8,314 / 0,004003) = 2,5 * 2077 = 5192 J/kgK -> <b>5,19 kJ/kgK</b>
+                </td>
+            </tr>
+
+            <!-- NITROGÉN -->
+            <tr class="gas-row" onclick="toggleDetails('n2')">
+                <td>Nitrogén (N₂)</td>
+                <td>5</td>
+                <td>28,01</td>
+                <td>0,74</td>
+                <td>1,04</td>
+            </tr>
+            <tr id="n2" class="details">
+                <td colspan="5">
+                    <strong>Levezetés (N₂):</strong><br>
+                    1. c<sub>v</sub> = (5/2) * (8,314 / 0,02801) = 2,5 * 296,8 = 742 J/kgK -> <b>0,74 kJ/kgK</b><br>
+                    2. c<sub>p</sub> = ((5+2)/2) * (8,314 / 0,02801) = 3,5 * 296,8 = 1039 J/kgK -> <b>1,04 kJ/kgK</b>
                 </td>
             </tr>
 
             <!-- OXIGÉN -->
             <tr class="gas-row" onclick="toggleDetails('o2')">
-                <td><b>Oxigén (O₂)</b></td>
+                <td>Oxigén (O₂)</td>
                 <td>5</td>
                 <td>31,99</td>
                 <td>0,65</td>
@@ -79,9 +93,24 @@
             <tr id="o2" class="details">
                 <td colspan="5">
                     <strong>Levezetés (O₂):</strong><br>
-                    1. Moláris Cv = (5/2)*8,314 = 20,785 J/molK<br>
-                    2. Fajhő cv = 20,785 / 0,03199 kg/mol ≈ 650 J/kgK<br>
-                    3. kJ-ban: <b>0,65 kJ/kgK</b>
+                    1. c<sub>v</sub> = (5/2) * (8,314 / 0,03199) = 2,5 * 259,9 = 650 J/kgK -> <b>0,65 kJ/kgK</b><br>
+                    2. c<sub>p</sub> = ((5+2)/2) * (8,314 / 0,03199) = 3,5 * 259,9 = 910 J/kgK -> <b>0,91 kJ/kgK</b>
+                </td>
+            </tr>
+
+            <!-- METÁN -->
+            <tr class="gas-row" onclick="toggleDetails('ch4')">
+                <td>Metán (CH₄)</td>
+                <td>6</td>
+                <td>16,04</td>
+                <td>1,56</td>
+                <td>2,08</td>
+            </tr>
+            <tr id="ch4" class="details">
+                <td colspan="5">
+                    <strong>Levezetés (CH₄):</strong><br>
+                    1. c<sub>v</sub> = (6/2) * (8,314 / 0,01604) = 3 * 518,3 = 1555 J/kgK -> <b>1,56 kJ/kgK</b><br>
+                    2. c<sub>p</sub> = ((6+2)/2) * (8,314 / 0,01604) = 4 * 518,3 = 2073 J/kgK -> <b>2,08 kJ/kgK</b>
                 </td>
             </tr>
         </tbody>
@@ -91,9 +120,16 @@
 <script>
     function toggleDetails(id) {
         var element = document.getElementById(id);
-        if (element.style.display === "table-row") {
-            element.style.display = "none";
-        } else {
+        var isVisible = element.style.display === "table-row";
+        
+        // Összes bezárása
+        var allDetails = document.getElementsByClassName('details');
+        for (var i = 0; i < allDetails.length; i++) {
+            allDetails[i].style.display = "none";
+        }
+        
+        // Csak azt nyitjuk ki, amire kattintottak (ha eddig zárva volt)
+        if (!isVisible) {
             element.style.display = "table-row";
         }
     }
