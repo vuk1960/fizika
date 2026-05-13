@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hőtani Ház Projekt</title>
+    <style>
+        :root {
+            --primary: #2b6cb0;
+            --secondary: #319795;
+            --accent: #dd6b20;
+            --bg: #f7fafc;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 { color: var(--primary); margin-bottom: 5px; }
+        h2 { color: var(--secondary); border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 0; }
+        h3 { margin-top: 15px; margin-bottom: 5px; color: var(--primary); }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            .sticky-panel { position: static !important; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        /* Rögzített jobb oldali panel görgetéshez */
+        .sticky-panel {
+            position: sticky;
+            top: 20px;
+        }
+
+        /* Sematikus Ház Grafika */
+        .house-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            background: #edf2f7;
+            border-radius: 8px;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .house-svg {
+            width: 160px;
+            height: 160px;
+        }
+
+        /* Élő adatkijelző a ház alatt */
+        .live-results {
+            background: #2d3748;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .live-results table { width: 100%; border-collapse: collapse; }
+        .live-results td { padding: 4px 0; }
+        .live-results td:last-child { text-align: right; font-weight: bold; color: #63b3ed; }
+
+        /* Form elemek */
+        .input-group {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .input-group span { width: 70px; text-align: left; padding-left: 5px; font-size: 0.85rem; color: #718096; }
+
+        label { font-weight: 600; font-size: 0.9rem; flex-grow: 1; }
+        input {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            text-align: right;
+        }
+
+        /* Gombok */
+        .btn-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button:hover { background-color: #2c5282; }
+        button:active { transform: scale(0.98); }
+        button:disabled { display: none; } /* Elrejtjük ha már nem kell */
+        
+        .btn-reset { background-color: #e53e3e; }
+        .btn-reset:hover { background-color: #c53030; }
+
+        /* Lépések és Képletek */
+        .step-box {
+            background: #ebf8ff;
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: opacity: 1; transform: translateY(0); }
+        }
+
+        .formula {
+            background: #e2e8f0;
+            padding: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px 0;
+            font-weight: bold;
+            color: #1a202c;
+        }
+
+        .result-highlight {
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .hidden { display: none; }
+        
+        .summary-box {
+            background: #f0fff4;
+            border: 2px solid #38a169;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Hőtani Projektfeladat</h1>
+        <p>Ház termodinamikai és energetikai modellezése lépésről lépésre</p>
+    </header>
+
+    <div class="grid">
+        <!-- BAL OLDAL: Bemenetek és a görgethető Számítási lépések -->
+        <div id="left-column">
+            <div class="card" id="inputs-panel">
+                <h2>1. Bemenő Paraméterek</h2>
+                
+                <h3>Geometria & Környezet</h3>
+                <div class="input-group">
+                    <label>Alapterület (A):</label>
+                    <input type="number" id="param-A" value="80"><span>m²</span>
+                </div>
+                <div class="input-group">
+                    <label>Oldalmagasság (h):</label>
+                    <input type="number" id="param-h" value="3" step="0.1"><span>m</span>
+                </div>
+                <div class="input-group">
+                    <label>Külső hőmérséklet (Tk):</label>
+                    <input type="number" id="param-Tk" value="10"><span>°C</span>
+                </div>
+                <div class="input-group">
+                    <label>Belső hőmérséklet (Tb):</label>
+                    <input type="number" id="param-Tb" value="24"><span>°C</span>
+                </div>
+
+                <h3>Falszerkezet</h3>
+                <div class="input-group">
+                    <label>Fal vastagság (df):</label>
+                    <input type="number" id="param-df" value="0.3" step="0.05"><span>m</span>
+                </div>
+                <div class="input-group">
+                    <label>Fal sűrűség (ρf):</label>
+                    <input type="number" id="param-rhof" value="1600"><span>kg/m³</span>
+                </div>
+                <div class="input-group">
+                    <label>Fal fajhő (cf):</label>
+                    <input type="number" id="param-cf" value="840"><span>J/(kg·K)</span>
+                </div>
+                <div class="input-group">
+                    <label>Hővezetési tényező (λf):</label>
+                    <input type="number" id="param-lambdaf" value="0.7" step="0.05"><span>W/(m·K)</span>
+                </div>
+
+                <h3>Nyílászárók</h3>
+                <div class="input-group">
+                    <label>Ablak/Ajtó felület (Any):</label>
+                    <input type="number" id="param-Any" value="12" step="0.5"><span>m²</span>
+                </div>
+                <div class="input-group">
+                    <label>Hőátbocsátási tény. (Uny):</label>
+                    <input type="number" id="param-Uny" value="1.5" step="0.1"><span>W/(m²·K)</span>
+                </div>
+                
+                <div class="btn-container" id="start-btn-container">
+                    <button id="btn-start" onclick="nextStep()">Számítás indítása</button>
+                </div>
+            </div>
+
+            <!-- Ide töltődnek be dinamikusan a lépések egymás alá -->
+            <div id="steps-container"></div>
+            <div id="summary-container" class="hidden"></div>
+        </div>
+
+        <!-- JOBB OLDAL: Sematikus modell és folyamatosan frissülő eredmények (Sticky) -->
+        <div class="sticky-panel">
+            <div class="card">
+                <h2>2. Sematikus Modell & Élő Értékek</h2>
+                <div class="house-visual">
+                    <svg class="house-svg" viewBox="0 0 100 100">
+                        <polygon points="50,15 90,45 10,45" fill="#e53e3e" stroke="#000" stroke-width="1"/>
+                        <rect x="20" y="45" width="60" height="45" fill="#feebc8" stroke="#000" stroke-width="1" />
+                        <rect x="30" y="55" width="15" height="15" fill="#ebf8ff" stroke="#000" stroke-width="1" />
+                        <rect x="55" y="55" width="15" height="35" fill="#7b341e" stroke="#000" stroke-width="1" />
+                    </svg>
+                </div>
+                
+                <div class="live-results">
+                    <h3 style="color: #fff; margin-top:0; font-size:1rem; border-bottom:1px solid #4a5568; padding-bottom:5px;">Számított adatok jegyzéke:</h3>
+                    <table>
+                        <tr id="live-row-tiszta" class="hidden"><td>Tiszta lev. melegítés (1°C):</td><td id="live-Q-tiszta">-</td></tr>
+                        <tr id="live-row-elhasznalt" class="hidden"><td>Elhasznált lev. melegítés (1°C):</td><td id="live-Q-elhasznalt">-</td></tr>
+                        <tr id="live-row-fal" class="hidden"><td>Falak melegítése (1°C):</td><td id="live-Q-fal">-</td></tr>
+                        <tr id="live-row-futes" class="hidden"><td>Szükséges fűtőteljesítmény:</td><td id="live-P-total">-</td></tr>
+                        <tr id="live-row-modern" class="hidden"><td>Korszerűsített fűtési igény:</td><td id="live-P-modern">-</td></tr>
+                    </table>
+                    <p id="live-empty-msg" style="margin:5px 0 0 0; color:#a0aec0; font-style:italic;">Még nincs futtatott számítás.</p>
+                </div>
+
+                <div class="btn-container">
+                    <button id="btn-reset" class="btn-reset hidden" onclick="resetProject()">Minden adat törlése / Újraszámol</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentStep = 0;
+    let Q_tiszta = 0, Q_elhasznalt = 0, Q_fal = 0, P_total = 0;
+
+    function nextStep() {
+        // Kezdeti lépésnél lezárjuk az inputokat és eltüntetjük a legfelső indító gombot
+        if (currentStep === 0) {
+            toggleInputs(true);
+            document.getElementById('live-empty-msg').classList.add('hidden');
+            document.getElementById('btn-reset').classList.remove('hidden');
+            document.getElementById('start-btn-container').classList.add('hidden');
+        } else {
+            // Elrejtjük az előző lépés végén lévő tovább gombot
+            const prevBtn = document.getElementById(`btn-next-step-${currentStep}`);
+            if (prevBtn) prevBtn.style.display = 'none';
+        }
+
+        currentStep++;
+        calculateStep(currentStep);
+    }
+
+    function toggleInputs(disable) {
+        const inputs = document.querySelectorAll('#inputs-panel input');
+        inputs.forEach(input => input.disabled = disable);
+    }
+
+    function calculateStep(step) {
+        const A = parseFloat(document.getElementById('param-A').value);
+        const h = parseFloat(document.getElementById('param-h').value);
+        const Tk = parseFloat(document.getElementById('param-Tk').value);
+        const Tb = parseFloat(document.getElementById('param-Tb').value);
+        const df = parseFloat(document.getElementById('param-df').value);
+        const rhof = parseFloat(document.getElementById('param-rhof').value);
+        const cf = parseFloat(document.getElementById('param-cf').value);
+        const lambdaf = parseFloat(document.getElementById('param-lambdaf').value);
+        const Any = parseFloat(document.getElementById('param-Any').value);
+        const Uny = parseFloat(document.getElementById('param-Uny').value);
+
+        const container = document.getElementById('steps-container');
+        const dT_futes = Tb - Tk;
+
+        const rho_levegő = 1.2; 
+        const cv_tiszta = 718;  
+        const cv_elhasznalt = 770; 
+
+        let stepHtml = '';
+
+        if (step === 1) {
+            const V = A * h;
+            const m_levegő = rho_levegő * V;
+            Q_tiszta = m_levegő * cv_tiszta * 1;
+            Q_elhasznalt = m_levegő * cv_elhasznalt * 1;
+
+            stepHtml = `
+                <div class="step-box" id="step-card-1">
+                    <h3>1. Lépés: Levegő felmelegítése (&Delta;T = 1°C)</h3>
+                    <p>Ház térfogata: <b>V = A &middot; h</b> = ${A} &middot; ${h} = ${V.toFixed(1)} m³</p>
+                    <p>Levegő tömege (&rho; = 1.2 kg/m³): <b>m = &rho; &middot; V</b> = ${m_levegő.toFixed(1)} kg</p>
+                    <hr>
+                    <p><b>A) Tiszta levegő (Kétatomos gáz, c_v = 718 J/kg·K):</b></p>
+                    <div class="formula">Q = m &middot; c_v &middot; &Delta;T</div>
+                    <p>Eredmény: <span class="result-highlight">${Q_tiszta.toFixed(0)} J</span></p>
+                    <p><b>B) Elhasznált levegő (Többatomos gáz, c_v = 770 J/kg·K):</b></p>
+                    <div class="formula">Q = m &middot; c_v_új &middot; &Delta;T</div>
+                    <p>Eredmény: <span class="result-highlight">${Q_elhasznalt.toFixed(0)} J</span></p>
+                    <div class="btn-container">
+                        <button id="btn-next-step-1" onclick="nextStep()">Tovább a 2. lépésre &darr;</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += stepHtml;
+
+            // Jobb oldali panel frissítése
+            document.getElementById('live-row-tiszta').classList.remove('hidden');
+            document.getElementById('live-row-elhasznalt').classList.remove('hidden');
+            document.getElementById('live-Q-tiszta').innerText = Q_tiszta.toFixed(0) + " J";
+            document.getElementById('live-Q-elhasznalt').innerText = Q_elhasznalt.toFixed(0) + " J";
+        } 
+        else if (step === 2) {
+            const kerulet = 4 * Math.sqrt(A);
+            const A_fal_brutto = kerulet * h;
+            const A_fal_netto = A_fal_brutto - Any;
+            const V_fal = A_fal_netto * df;
+            const m_fal = V_fal * rhof;
+            Q_fal = m_fal * cf * 1;
+
+            stepHtml = `
+                <div class="step-box" id="step-card-2">
+                    <h3>2. Lépés: Falak felmelegítése (&Delta;T = 1°C)</h3>
+                    <p>Nettó falfelület (nyílászárók nélkül): <b>A_fal</b> = ${A_fal_netto.toFixed(1)} m²</p>
+                    <p>Falazat tömege: <b>m_fal = A_fal &middot; d_f &middot; &rho;_f</b> = ${m_fal.toFixed(0)} kg</p>
+                    <div class="formula">Q_fal = m_fal &middot; c_f &middot; &Delta;T</div>
+                    <p>Eredmény: <span class="result-highlight">${Q_fal.toFixed(0)} J</span> (${(Q_fal/1000).toFixed(1)} kJ)</p>
+                    <div class="btn-container">
+                        <button id="btn-next-step-2" onclick="nextStep()">Tovább a 3. lépésre &darr;</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += stepHtml;
+
+            // Jobb oldali panel frissítése
+            document.getElementById('live-row-fal').classList.remove('hidden');
+            document.getElementById('live-Q-fal').innerText = (Q_fal/1000).toFixed(1) + " kJ";
+        } 
+        else if (step === 3) {
+            const kerulet = 4 * Math.sqrt(A);
+            const A_fal_netto = (kerulet * h) - Any;
+            const P_fal = (lambdaf / df) * A_fal_netto * dT_futes;
+            const P_ny = Uny * Any * dT_futes;
+            P_total = P_fal + P_ny;
+
+            stepHtml = `
+                <div class="step-box" id="step-card-3">
+                    <h3>3. Lépés: Folyamatos hőveszteség pótlása (&Delta;T = ${dT_futes}°C)</h3>
+                    <p>Falak hővesztesége: <b>P_fal</b> = ${P_fal.toFixed(0)} W</p>
+                    <p>Nyílászárók hővesztesége: <b>P_ny</b> = ${P_ny.toFixed(0)} W</p>
+                    <div class="formula">P_összes = P_fal + P_ny</div>
+                    <p>Eredmény: <span class="result-highlight">${P_total.toFixed(0)} W</span> folyamatos fűtési teljesítmény.</p>
+                    <div class="btn-container">
+                        <button id="btn-next-step-3" onclick="nextStep()">Tovább a 4. lépésre &darr;</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += stepHtml;
+
+            // Jobb oldali panel frissítése
+            document.getElementById('live-row-futes').classList.remove('hidden');
+            document.getElementById('live-P-total').innerText = P_total.toFixed(0) + " W";
+        } 
+        else if (step === 4) {
+            const kerulet = 4 * Math.sqrt(A);
+            const A_fal_netto = (kerulet * h) - Any;
+            const U_fal_eredeti = lambdaf / df;
+            const R_fal_eredeti = 1 / U_fal_eredeti;
+            const R_szigeteles = 0.12 / 0.038; 
+            const U_fal_uj = 1 / (R_fal_eredeti + R_szigeteles);
+            const Uny_uj = 0.8; 
+            
+            const P_fal_uj = U_fal_uj * A_fal_netto * dT_futes;
+            const P_ny_uj = Uny_uj * Any * dT_futes;
+            const P_total_uj = P_fal_uj + P_ny_uj;
+            const megtakaritas = ((P_total - P_total_uj) / P_total) * 100;
+
+            stepHtml = `
+                <div class="step-box" id="step-card-4">
+                    <h3>4. Lépés: Korszerűsítés hatása (Szigetelés & Ablakcsere)</h3>
+                    <p><i>Módosítás: +12 cm hőszigetelés és modern 3 rétegű ablakok.</i></p>
+                    <p>Új fűtési igény: <span class="result-highlight">${P_total_uj.toFixed(0)} W</span></p>
+                    <p>Megtakarítás: <b><span style="color:#38a169;">${megtakaritas.toFixed(1)}%</span></b></p>
+                </div>
+            `;
+            container.innerHTML += stepHtml;
+
+            // Jobb oldali panel frissítése
+            document.getElementById('live-row-modern').classList.remove('hidden');
+            document.getElementById('live-P-modern').innerText = P_total_uj.toFixed(0) + " W (" + megtakaritas.toFixed(0) + "% megtakarítás)";
+
+            showSummary();
+        }
+
+        // Finom görgetés a legújabban megjelent kártyához
+        const latestCard = document.getElementById(`step-card-${step}`);
+        if(latestCard) {
+            latestCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    function showSummary() {
+        const summary = document.getElementById('summary-container');
+        summary.classList.remove('hidden');
+        summary.innerHTML = `
+            <div class="summary-box">
+                <h2>📊 Projekt Összegzés diákoknak</h2>
+                <ul>
+                    <li>A gázok szabadsági foka (kétatomos vs többatomos) befolyásolja a szoba felfűtéséhez szükséges energiát.</li>
+                    <li>A falak nagy tömegük miatt rengeteg hőt raktároznak (hőtehetetlenség).</li>
+                    <li>A transzmissziós veszteségek csökkentésének leghatékonyabb módja a szigetelés javítása.</li>
+                </ul>
+            </div>
+        `;
+        // Utolsó görgetés az összegzéshez
+        summary.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function resetProject() {
+        toggleInputs(false);
+        
+        document.getElementById('steps-container').innerHTML = '';
+        document.getElementById('summary-container').innerHTML = '';
+        document.getElementById('summary-container').classList.add('hidden');
+        document.getElementById('btn-reset').classList.add('hidden');
+        document.getElementById('start-btn-container').classList.remove('hidden');
+        
+        // Jobb oldali kijelzők visszaállítása
+        const liveRows = ['tiszta', 'elhasznalt', 'fal', 'futes', 'modern'];
+        liveRows.forEach(row => document.getElementById(`live-row-${row}`).classList.add('hidden'));
+        document.getElementById('live-empty-msg').classList.remove('hidden');
+
+        currentStep = 0;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>
