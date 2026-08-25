@@ -72,22 +72,15 @@
 </div>
 
 <!-- ================================================================= -->
-<!-- IDE ILLESZD BE A COZE FELÜLETÉRŐL KIMÁSOLT TELJES SCRIPT KÓDOT! -->
-<!-- Az alábbi kód csak egy minta, cseréld ki a sajátodra a Publish után! -->
-<!-- Coze Chat SDK hivatalos beágyazása -->
-<script src="https://coze.com"></script>
+<!-- Coze Chat SDK hivatalos nemzetközi beágyazása -->
+<script src="https://sf-cdn.coze.com/obj/unpkg-va/flow-platform/chat-app-sdk/1.2.0-beta.17/libs/oversea/index.js"></script>
 <script>
   new CozeWebSDK.WebChatClient({
     config: {
-      bot_id: '7677995299390439477',
+      botId: '7677995299390439477', // Figyelem: botId nagy I-vel!
     },
     componentProps: {
-      title: 'Refis AI Kisokos',
-    },
-    // Hitelesítési beállítások a nemzetközi szerverekhez
-    auth: {
-      type: 'token',
-      token: '7677995299390439477',
+      title: 'PRK AI Kisokos',
     },
   });
 </script>
