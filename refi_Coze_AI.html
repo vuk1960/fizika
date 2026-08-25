@@ -74,17 +74,20 @@
 <!-- ================================================================= -->
 <!-- IDE ILLESZD BE A COZE FELÜLETÉRŐL KIMÁSOLT TELJES SCRIPT KÓDOT! -->
 <!-- Az alábbi kód csak egy minta, cseréld ki a sajátodra a Publish után! -->
+<!-- Coze Chat SDK hivatalos beágyazása -->
 <script src="https://coze.com"></script>
 <script>
   new CozeWebSDK.WebChatClient({
     config: {
-      bot_id: '7677995299390439477', // A te bot azonosítód
+      bot_id: '7677995299390439477',
     },
-    // EZ A KÉT UTASÍTÁS KÖTELEZŐ A NEMZETKÖZI COZE.COM HASZNÁLATÁHOZ:
-    api_base: 'https://api.coze.com', 
-    app_id: '7677995299390439477',
     componentProps: {
-      title: 'PRK AI Kisokos',
+      title: 'Refis AI Kisokos',
+    },
+    // Hitelesítési beállítások a nemzetközi szerverekhez
+    auth: {
+      type: 'token',
+      token: '7677995299390439477',
     },
   });
 </script>
