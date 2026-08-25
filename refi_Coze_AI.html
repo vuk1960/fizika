@@ -12,23 +12,15 @@
             background-color: #f4f6f9;
             color: #333;
         }
-        /* Iskolai fejléc dizájn */
         header {
             background-color: #002d62; /* Kollégiumi sötétkék */
             color: white;
             padding: 20px 40px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        header h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-        header p {
-            margin: 5px 0 0 0;
-            opacity: 0.8;
-            font-size: 14px;
-        }
-        /* Fő tartalom */
+        header h1 { margin: 0; font-size: 24px; }
+        header p { margin: 5px 0 0 0; opacity: 0.8; font-size: 14px; }
+        
         .container {
             max-width: 800px;
             margin: 40px auto;
@@ -37,21 +29,17 @@
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        h2 {
-            color: #002d62;
-            margin-top: 0;
-        }
-        p {
-            line-height: 1.6;
-            color: #4a5568;
-        }
-        .info-box {
-            background-color: #ebf8ff;
-            border-left: 4px solid #3182ce;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 0 6px 6px 0;
-            font-size: 15px;
+        h2 { color: #002d62; margin-top: 0; }
+        p { line-height: 1.6; color: #4a5568; }
+        
+        /* A FIXEN BEÉPÍTETT CHAT ABLAK STÍLUSA */
+        .chat-ablak-keret {
+            width: 100%;
+            height: 600px; /* Jó nagy ablak a kényelmes beszélgetéshez */
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            margin-top: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
     </style>
 </head>
@@ -64,29 +52,27 @@
 
 <div class="container">
     <h2>Üdvözöljük az Iskolai AI Kisokos tesztoldalán!</h2>
-    <p>Ez a statikus HTML oldal azt hivatott bemutatni, hogyan fog kinézne az AI asszisztens a Kollégium éles honlapján.</p>
+    <p>Ez a statikus oldal azt mutatja be, hogyan működik a mesterséges intelligencia alapú asszisztens a Kollégium éles weboldalába fixen beágyazva.</p>
     
-    <div class="info-box">
-        <strong>Prezentációs tipp:</strong> Nézz a képernyő <strong>jobb alsó sarkába</strong>! Ott megjelent a hivatalos chat buborék. Kattints rá, és helyben tudsz beszélgetni a robottal a feltöltött Házirend alapján.
-    </div>
+    <!-- IDE FOG BEÁGYAZÓDNI A CHAT AZ OLDAL KÖZEPÉRE -->
+    <div id="coze-chat-helye" class="chat-ablak-keret"></div>
 </div>
 
-<!-- ================================================================= -->
-<!-- Coze Chat SDK hivatalos és működő nemzetközi beágyazása -->
+<!-- Coze Chat SDK betöltése -->
 <script src="https://coze.com"></script>
 <script>
   new CozeWebSDK.WebChatClient({
     config: {
-      botId: '7677995299390439477', // A te egyedi bot azonosítód
+      botId: '7677995299390439477',
     },
     componentProps: {
-      title: 'REFI AI Kisokos',
-      layout: 'float',             // EZ KÉNYSZERÍTI KI a jobb alsó sarokban lévő lebegő figurát
-      defaultOpen: false           // Ha true-ra állítod, az oldal betöltésekor azonnal nyitva lesz a chat
+      title: 'PRK AI Kisokos',
+      layout: 'pc', // 'pc' mód kényszeríti ki a fix, beágyazott ablakot
     },
+    // Megmondjuk a kódnak, hogy pontosan a fenti "coze-chat-helye" nevű dobozba tegye a chatet
+    el: document.getElementById('coze-chat-helye'), 
   });
 </script>
-<!-- ================================================================= -->
 
 </body>
 </html>
