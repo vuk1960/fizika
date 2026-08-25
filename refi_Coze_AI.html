@@ -58,19 +58,19 @@
     <div id="coze-chat-helye" class="chat-ablak-keret"></div>
 </div>
 
+<!-- Coze Chat SDK betöltése -->
 <script src="https://coze.com"></script>
 <script>
   new CozeWebSDK.WebChatClient({
-    // EZ A SOR KÖTELEZŐ: Megmondja, hogy a globális (nem a kínai) szerverre kapcsolódjon
-    apiBase: 'https://api.coze.com', 
     config: {
       botId: '7677995299390439477',
     },
     componentProps: {
       title: 'PRK AI Kisokos',
-      layout: 'pc',
+      layout: 'pc', // 'pc' mód kényszeríti ki a fix, beágyazott ablakot
     },
-    el: document.getElementById('coze-chat-helye'),
+    // Megmondjuk a kódnak, hogy pontosan a fenti "coze-chat-helye" nevű dobozba tegye a chatet
+    el: document.getElementById('coze-chat-helye'), 
   });
 </script>
 
