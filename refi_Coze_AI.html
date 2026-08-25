@@ -72,19 +72,20 @@
 </div>
 
 <!-- ================================================================= -->
-<!-- Coze Chat SDK hivatalos nemzetközi beágyazása -->
-<script src="https://sf-cdn.coze.com/obj/unpkg-va/flow-platform/chat-app-sdk/1.2.0-beta.17/libs/oversea/index.js"></script>
+<!-- Coze Chat SDK hivatalos és működő nemzetközi beágyazása -->
+<script src="https://coze.com"></script>
 <script>
   new CozeWebSDK.WebChatClient({
     config: {
-      botId: '7677995299390439477', // Figyelem: botId nagy I-vel!
+      botId: '7677995299390439477', // A te egyedi bot azonosítód
     },
     componentProps: {
-      title: 'PRK AI Kisokos',
+      title: 'REFI AI Kisokos',
+      layout: 'float',             // EZ KÉNYSZERÍTI KI a jobb alsó sarokban lévő lebegő figurát
+      defaultOpen: false           // Ha true-ra állítod, az oldal betöltésekor azonnal nyitva lesz a chat
     },
   });
 </script>
-
 <!-- ================================================================= -->
 
 </body>
