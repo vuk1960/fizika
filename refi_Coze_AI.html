@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pápai Református Kollégium - AI Asszisztens Tesztoldal</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            color: #333;
+        }
+        /* Iskolai fejléc dizájn */
+        header {
+            background-color: #002d62; /* Kollégiumi sötétkék */
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        header p {
+            margin: 5px 0 0 0;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        /* Fő tartalom */
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h2 {
+            color: #002d62;
+            margin-top: 0;
+        }
+        p {
+            line-height: 1.6;
+            color: #4a5568;
+        }
+        .info-box {
+            background-color: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Pápai Református Kollégium</h1>
+    <p>Hivatalos Weboldal – AI Asszisztens Integrációs Teszt</p>
+</header>
+
+<div class="container">
+    <h2>Üdvözöljük az Iskolai AI Kisokos tesztoldalán!</h2>
+    <p>Ez a statikus HTML oldal azt hivatott bemutatni, hogyan fog kinézne az AI asszisztens a Kollégium éles honlapján.</p>
+    
+    <div class="info-box">
+        <strong>Prezentációs tipp:</strong> Nézz a képernyő <strong>jobb alsó sarkába</strong>! Ott megjelent a hivatalos chat buborék. Kattints rá, és helyben tudsz beszélgetni a robottal a feltöltött Házirend alapján.
+    </div>
+</div>
+
+<!-- ================================================================= -->
+<!-- IDE ILLESZD BE A COZE FELÜLETÉRŐL KIMÁSOLT TELJES SCRIPT KÓDOT! -->
+<!-- Az alábbi kód csak egy minta, cseréld ki a sajátodra a Publish után! -->
+<script src="https://sf-cdn.coze.com/obj/unpkg-va/flow-platform/chat-app-sdk/1.2.0-beta.6/libs/oversea/index.js"></script>
+<script>
+  new CozeWebSDK.WebChatClient({
+    config: {
+      bot_id: '7677995299390439477',
+    },
+    componentProps: {
+      title: 'Coze',
+    },
+    auth: {
+      type: 'token',
+      token: 'pat_********',
+      onRefreshToken: function () {
+        return 'pat_********'
+      }
+    }
+  });
+</script>
+
+<!-- ================================================================= -->
+
+</body>
+</html>
