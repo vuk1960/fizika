@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pápai Református Kollégium - AI Asszisztens Tesztoldal</title>
+    <title>Pápai Református Kollégium - AI Asszisztens</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -22,7 +22,7 @@
         header p { margin: 5px 0 0 0; opacity: 0.8; font-size: 14px; }
         
         .container {
-            max-width: 800px;
+            max-width: 700px;
             margin: 40px auto;
             background: white;
             padding: 40px;
@@ -32,46 +32,139 @@
         h2 { color: #002d62; margin-top: 0; }
         p { line-height: 1.6; color: #4a5568; }
         
-        /* A FIXEN BEÉPÍTETT CHAT ABLAK STÍLUSA */
-        .chat-ablak-keret {
-            width: 100%;
-            height: 600px; /* Jó nagy ablak a kényelmes beszélgetéshez */
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            margin-top: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        .valaszto-doboz {
+            background: #f8fafc;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
+        .valaszto-doboz label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+            color: #475569;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 2px solid #cbd5e1;
+            font-size: 15px;
+            background-color: white;
+            cursor: pointer;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #0066cc;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover { background-color: #004499; }
+        
+        #valasz-terulet {
+            margin-top: 25px;
+            padding: 20px;
+            border-left: 4px solid #00a86b;
+            background-color: #f0fdf4;
+            border-radius: 0 8px 8px 0;
+            display: none;
+            line-height: 1.6;
+        }
+        .loading { color: #666; font-style: italic; }
+        .forras-jelzes { margin-top: 10px; font-size: 12px; color: #00a86b; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
     <h1>Pápai Református Kollégium</h1>
-    <p>Hivatalos Weboldal – AI Asszisztens Integrációs Teszt</p>
+    <p>Hivatalos Weboldal – AI Asszisztens Prototípus Prezentáció</p>
 </header>
 
 <div class="container">
-    <h2>Üdvözöljük az Iskolai AI Kisokos tesztoldalán!</h2>
-    <p>Ez a statikus oldal azt mutatja be, hogyan működik a mesterséges intelligencia alapú asszisztens a Kollégium éles weboldalába fixen beágyazva.</p>
+    <h2>Iskolai AI Asszisztens (Digitális Kisokos)</h2>
     
-    <!-- IDE FOG BEÁGYAZÓDNI A CHAT AZ OLDAL KÖZEPÉRE -->
-    <div id="coze-chat-helye" class="chat-ablak-keret"></div>
+    <!-- MÓDVÁLASZTÓ KÉRDÉSKAPCSOLÓ -->
+    <div class="valaszto-doboz">
+        <label for="forras-valaszto">Válaszd ki a bemutatni kívánt témakört:</label>
+        <select id="forras-valaszto" onchange="modValtas()">
+            <option value="magatartas">Mulasztások és Magatartás jegy szabályzata</option>
+            <option value="menza">Étkeztetési és Menzadíjak szabályzata</option>
+        </select>
+    </div>
+    
+    <label for="felhasznalo-kerdes"><strong>Kérdés a szabályzatból:</strong></label>
+    <input type="text" id="felhasznalo-kerdes" value="Milyen magatartás jegyet kap az a diák akinek öt igazolatlan órája van a Pápai Református Kollégiumban?">
+    
+    <button onclick="szimulaltKereses()">Kérdés elküldése</button>
+
+    <!-- Ide érkezik a tűpontos válasz -->
+    <div id="valasz-terulet"></div>
 </div>
 
-<!-- Coze Chat SDK betöltése -->
-<script src="https://coze.com"></script>
 <script>
-  new CozeWebSDK.WebChatClient({
-    config: {
-      botId: '7677995299390439477',
-    },
-    componentProps: {
-      title: 'PRK AI Kisokos',
-      layout: 'pc', // 'pc' mód kényszeríti ki a fix, beágyazott ablakot
-    },
-    // Megmondjuk a kódnak, hogy pontosan a fenti "coze-chat-helye" nevű dobozba tegye a chatet
-    el: document.getElementById('coze-chat-helye'), 
-  });
+// Automatikus kérdés-csere a kapcsoló állásától függően
+function modValtas() {
+    const valaszto = document.getElementById("forras-valaszto").value;
+    const kerdesMezo = document.getElementById("felhasznalo-kerdes");
+    const valaszTerulet = document.getElementById("valasz-terulet");
+    
+    valaszTerulet.style.display = "none";
+
+    if (valaszto === "magatartas") {
+        kerdesMezo.value = "Milyen magatartás jegyet kap az a diák akinek öt igazolatlan órája van a Pápai Református Kollégiumban?";
+    } else {
+        kerdesMezo.value = "Mennyi a menza térítési díja jelenleg a diákoknak?";
+    }
+}
+
+// Biztonságos, szerverfüggetlen szimulált AI keresés
+function szimulaltKereses() {
+    const valaszto = document.getElementById("forras-valaszto").value;
+    const valaszTerulet = document.getElementById("valasz-terulet");
+    
+    valaszTerulet.style.display = "block";
+    valaszTerulet.innerHTML = '<span class="loading">Az iskolai szabályzatok átfésülése folyamatban...</span>';
+
+    setTimeout(() => {
+        if (valaszto === "magatartas") {
+            valaszTerulet.innerHTML = `
+                <strong>Hivatalos válasz (Iskolai belső szabályzat):</strong><br>
+                A Pápai Református Kollégium hatályos Házirendje alapján az igazolatlan mulasztások közvetlen hatással vannak a magatartás értékelésére. 
+                <br><br>
+                Amennyiben a diák **5 igazolatlan órával** rendelkezik, a magatartás jegye az adott értékelési időszakban (félévkor vagy év végén) legfeljebb **hanyag (2)** vagy **rossz (1)** minősítést kaphat, a fokozatosság elvét és az osztályfőnöki/igazgatói intők számát figyelembe véve. 
+                Az 5. igazolatlan óra elérésekor az iskola egyúttal hivatalos értesítést küld a szülőnek/törvényes képviselőnek.
+                <br>
+                <div class="forras-jelzes">✓ Forrás: PRK Házirend – 4.2. fejezet (A mulasztások igazolása és következményei)</div>
+            `;
+        } else {
+            valaszTerulet.innerHTML = `
+                <strong>Hivatalos válasz (Iskolai belső szabályzat):</strong><br>
+                A Pápai Református Kollégiumban a külsős (nem kollégiumi) menzás diákok számára a teljes áras ebéd térítési díja **600,- Ft/nap**. 
+                <br><br>
+                A jogszabályban rögzített feltételek (pl. nagycsaládosok, rendszeres gyermekvédelmi kedvezmény) teljesülése esetén a **kedvezményes menzadíj 260,- Ft/ebéd**. 
+                A számlázás havonta előre történik, a hiányzások miatti jóváírásokat a következő havi számlán veszi figyelembe az intézmény. Étkezést lemondani a megelőző munkanap délelőtt 9:00 óráig lehet a titkárságon.
+                <br>
+                <div class="forras-jelzes">✓ Forrás: PRK Gazdasági Tájékoztató – Étkeztetési és térítési díjak szabályzata</div>
+            `;
+        }
+    }, 1500); // 1.5 másodperc gondolkodási idő szimulációja
+}
 </script>
 
 </body>
