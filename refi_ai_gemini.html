@@ -65,6 +65,14 @@
             white-space: pre-wrap;
         }
         .loading { color: #666; font-style: italic; }
+        .kulcs-gomb {
+            background-color: #718096;
+            font-size: 12px;
+            padding: 6px 10px;
+            width: auto;
+            margin-top: 10px;
+            float: right;
+        }
     </style>
 </head>
 <body>
@@ -75,6 +83,7 @@
 </header>
 
 <div class="container">
+    <button onclick="kulcsBeallitasa()" class="kulcs-gomb">API Kulcs Módosítása</button>
     <h2>Iskolai AI Asszisztens (Működő Prototípus)</h2>
     <p>Tedd fel a kérdésedet az iskolai házirenddel, menzával vagy az SZMSZ logisztikájával kapcsolatban. A háttérben a Google Gemini 1.5 Flash modellje fog válaszolni a megadott dokumentumok alapján!</p>
     
@@ -87,17 +96,32 @@
 </div>
 
 <script>
+// Ez a függvény kérdezi be a kulcsot, ha még nincs elmentve
+function APIKulcsEllenorzes() {
+    let mentettKulcs = localStorage.getItem("gemini_api_key");
+    if (!mentettKulcs) {
+        mentettKulcs = prompt("Kérlek, másold be ide a Google AI Studio-ból kapott AQ. kezdetű API kulcsodat:");
+        if (mentettKulcs) {
+            localStorage.setItem("gemini_api_key", mentettKulcs.trim());
+        }
+    }
+    return mentettKulcs;
+}
+
+// Lehetőség a kulcs kézi cseréjére
+function kulcsBeallitasa() {
+    localStorage.removeItem("gemini_api_key");
+    APIKulcsEllenorzes();
+}
+
 async function keresesInditasa() {
-    // =================================================================
-    // ELREJTÉSI TRÜKK: Vágd ketté a frissen kimásolt felső kulcsodat, 
-    // és az első felét írd a reszA-ba, a második felét a reszB-be!
-    // Példa: ha a kulcsod AQ.Ab8RN6...9QBA, akkor:
-    const reszA = "AQ.Ab8RN6KoWrKwTLqULx1aOn"; // Ide írd a kulcsod első felét
-    const reszB = "I0wG-p7uLspCcHc9aWaQ6ulU8uvA"; // Ide írd a kulcsod második felét
-    // =================================================================
+    // Kinyerjük a böngésző memóriájából a kulcsot, így a GitHub szűrője nem látja a kódban!
+    const API_KEY = APIKulcsEllenorzes();
     
-    // A program a háttérben összefűzi, a GitHub robotja így nem látja meg a mintázatot
-    const API_KEY = `${reszA}${reszB}`; 
+    if (!API_KEY) {
+        alert("API kulcs nélkül a rendszer nem tud működni!");
+        return;
+    }
     
     const userQuery = document.getElementById("felhasznalo-kerdes").value;
     const valaszTerulet = document.getElementById("valasz-terulet");
