@@ -1,52 +1,291 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-    <meta charset="UTF-8">
-    <title>PRK AI Asszisztens Tesztoldal</title>
-    <style>
-        body { font-family: sans-serif; margin: 40px; background: #f4f6f9; }
-        .box { background: white; padding: 30px; border-radius: 8px; max-width: 600px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #002d62; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
-        #eredmeny { margin-top: 20px; padding: 15px; background: #eef2f7; border-radius: 4px; display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Pápai Református Kollégium - Dokumentum kereső</title>
+
+<style>
+
+body{
+    font-family:Segoe UI,sans-serif;
+    margin:0;
+    background:#f4f6f9;
+    color:#333;
+}
+
+header{
+    background:#002d62;
+    color:white;
+    padding:20px 30px;
+}
+
+.container{
+    max-width:1000px;
+    margin:30px auto;
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+
+input{
+    width:100%;
+    padding:14px;
+    font-size:16px;
+    border:2px solid #ddd;
+    border-radius:8px;
+    box-sizing:border-box;
+}
+
+button{
+    margin-top:15px;
+    width:100%;
+    padding:14px;
+    background:#0066cc;
+    color:white;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#004ea1;
+}
+
+#eredmeny{
+    margin-top:25px;
+}
+
+.talalat{
+    background:#f7fafc;
+    border-left:5px solid #002d62;
+    padding:15px;
+    margin-bottom:15px;
+    border-radius:6px;
+}
+
+.cim{
+    font-weight:bold;
+    color:#002d62;
+    margin-bottom:8px;
+}
+
+.pontszam{
+    color:#666;
+    font-size:12px;
+    margin-top:10px;
+}
+
+.info{
+    background:#fff8dc;
+    border:1px solid #f5d76e;
+    padding:12px;
+    border-radius:6px;
+    margin-bottom:20px;
+}
+
+.loading{
+    color:#666;
+}
+
+</style>
 </head>
 <body>
 
-<div class="box">
-    <h1>PRK Digitális Kisokos Prototípus</h1>
-    <p>Írd be a kérdésedet az iskolai házirenddel kapcsolatban:</p>
-    
-    <input type="text" id="kerdes" placeholder="Pl.: Mikor kezdődik a nulladik óra?">
-    <button onclick="futtat()">Kérdés elküldése</button>
-    
-    <div id="eredmeny"></div>
+<header>
+    <h1>Pápai Református Kollégium</h1>
+    <p>Iskolai dokumentumkereső</p>
+</header>
+
+<div class="container">
+
+<div class="info">
+Ez a rendszer a feltöltött dokumentumokban keres.
+API kulcs és internetes AI szolgáltatás nélkül működik.
+</div>
+
+<h2>Kérdés megadása</h2>
+
+<input
+id="kerdes"
+type="text"
+placeholder="Például: Mikor kezdődik a nulladik óra?"
+>
+
+<button onclick="kereses()">
+Keresés
+</button>
+
+<div id="eredmeny"></div>
+
 </div>
 
 <script>
-function futtat() {
-    var k = document.getElementById("kerdes").value;
-    var e = document.getElementById("eredmeny");
-    e.style.display = "block";
-    e.innerHTML = "Betöltés...";
-    
-    // Egy teljesen ártatlan, külső, titkosított meghívás, amit a GitHub nem lát
-    var url = atob("aHR0cHM6Ly9nZW5lcmF0aXZlbGFuZ3VhZ2UuZ29vZ2xlYXBpcy5jb20vdjEvbW9kZWxzL2dlbWluaS0xLjUtZmxhc2g6Z2VuZXJhdGVDb250ZW50P2tleT0=");
-    var k1 = "AQ.Ab8RN6KoWrKwTLqULx1aOn";
-    var k2 = "I0wG-p7uLspCcHc9aWaQ6ulU8uvA";
-    
-    var prompt = "Te a PRK asszisztense vagy. Házirend: Nulladik óra 7:15, első óra 8:00. Menzadíj 600 Ft. Kérdés: " + k;
 
-    fetch(url + k1 + "I0wG-p7uLspCcHc9aWaQ6ulU8uvA", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    })
-    .then(r => r.json())
-    .then(d => { e.innerHTML = d.candidates[0].content.parts[0].text; })
-    .catch(err => { e.innerHTML = "Szerver kapcsolódási hiba."; });
+let dokumentumSzoveg = "";
+let bekezdesek = [];
+
+async function dokumentumBetoltese(){
+
+    const eredmenyDiv =
+        document.getElementById("eredmeny");
+
+    try{
+
+        eredmenyDiv.innerHTML =
+            '<div class="loading">Dokumentumok betöltése...</div>';
+
+        const response =
+            await fetch("./iskolai_dokumentumok.txt");
+
+        dokumentumSzoveg =
+            await response.text();
+
+        bekezdesek =
+            dokumentumSzoveg
+            .split(/\n\s*\n/)
+            .filter(x => x.trim().length > 20);
+
+        eredmenyDiv.innerHTML =
+            '<div class="talalat">Dokumentumok sikeresen betöltve.</div>';
+
+    }
+    catch(err){
+
+        eredmenyDiv.innerHTML =
+        `
+        <div class="talalat">
+        Nem sikerült betölteni az
+        iskolai_dokumentumok.txt fájlt.
+        </div>
+        `;
+    }
 }
+
+function normalizal(szoveg){
+
+    return szoveg
+    .toLowerCase()
+    .replace(/[.,!?;:()"]/g," ");
+}
+
+function kereses(){
+
+    const keresett =
+        document.getElementById("kerdes")
+        .value
+        .trim();
+
+    const eredmenyDiv =
+        document.getElementById("eredmeny");
+
+    if(!keresett){
+
+        alert("Írj be egy kérdést!");
+
+        return;
+    }
+
+    const kulcsszavak =
+        normalizal(keresett)
+        .split(/\s+/)
+        .filter(szo => szo.length > 2);
+
+    let talalatok = [];
+
+    bekezdesek.forEach(bekezdes=>{
+
+        let pont = 0;
+
+        const kisBetus =
+            normalizal(bekezdes);
+
+        kulcsszavak.forEach(szo=>{
+
+            const regex =
+                new RegExp("\\b"+szo+"\\b","g");
+
+            const egyezesek =
+                kisBetus.match(regex);
+
+            if(egyezesek){
+
+                pont += egyezesek.length;
+            }
+
+        });
+
+        if(pont > 0){
+
+            talalatok.push({
+                pont:pont,
+                szoveg:bekezdes
+            });
+        }
+
+    });
+
+    talalatok.sort(
+        (a,b)=>b.pont-a.pont
+    );
+
+    if(talalatok.length===0){
+
+        eredmenyDiv.innerHTML =
+        `
+        <div class="talalat">
+        Sajnálom, nem találtam megfelelő
+        információt az iskolai dokumentumokban.
+        </div>
+        `;
+
+        return;
+    }
+
+    let html =
+        `<h2>Találatok</h2>`;
+
+    talalatok
+    .slice(0,5)
+    .forEach((talalat,index)=>{
+
+        html +=
+        `
+        <div class="talalat">
+
+            <div class="cim">
+                Találat ${index+1}
+            </div>
+
+            ${talalat.szoveg}
+
+            <div class="pontszam">
+                Relevancia: ${talalat.pont}
+            </div>
+
+        </div>
+        `;
+    });
+
+    eredmenyDiv.innerHTML = html;
+}
+
+dokumentumBetoltese();
+
+document
+.getElementById("kerdes")
+.addEventListener("keydown",function(e){
+
+    if(e.key==="Enter"){
+        kereses();
+    }
+
+});
+
 </script>
 
 </body>
