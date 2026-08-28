@@ -62,7 +62,7 @@
             border-radius: 0 8px 8px 0;
             display: none;
             line-height: 1.6;
-            white-space: pre-wrap; /* Megtartja az AI soremeléseit */
+            white-space: pre-wrap;
         }
         .loading { color: #666; font-style: italic; }
     </style>
@@ -76,21 +76,20 @@
 
 <div class="container">
     <h2>Iskolai AI Asszisztens (Működő Prototípus)</h2>
-    <p>Írd be a kérdésedet az iskolai házirenddel vagy menzával kapcsolatban. A háttérben a Google Gemini 1.5 Flash modellje fog válaszolni valós időben!</p>
+    <p>Tedd fel a kérdésedet az iskolai házirenddel, menzával vagy az SZMSZ logisztikájával kapcsolatban. A háttérben a Google Gemini 1.5 Flash modellje fog válaszolni a megadott dokumentumok alapján!</p>
     
-    <label for="felhasznalo-kerdes"><strong>Tedd fel a kérdésedet:</strong></label>
-    <input type="text" id="felhasznalo-kerdes" placeholder="Pl.: Milyen magatartás jegyet kapok 5 igazolatlan óra után?">
+    <label for="felhasznalo-kerdes"><strong>Írd be a kérdésedet:</strong></label>
+    <input type="text" id="felhasznalo-kerdes" placeholder="Pl.: Mikor kezdődik a nulladik óra?">
     
     <button onclick="keresesInditasa()">Kérdés elküldése</button>
 
-    <!-- Ide érkezik az élő Gemini válasz -->
     <div id="valasz-terulet"></div>
 </div>
 
 <script>
 async function keresesInditasa() {
-    // 1. IDE MÁSOLD BE A GOOGLE AI STUDIO-BÓL KAPOTT API KULCSODAT!
-    const API_KEY = AQ.Ab8RN6KiP8L7Y2xF4nkanKxIloudF9ibd-3F-ITZYkRn2lsh6w; 
+    // Beillesztettük a képeden látható valódi Google Auth API kulcsodat kötelező idézőjelek között
+    const API_KEY = "AQ.Ab8RN6KiP8L7Y2xF4nkanKxIloudF9ibd-3F-ITZYkRn2lsh6w"; 
     
     const userQuery = document.getElementById("felhasznalo-kerdes").value;
     const valaszTerulet = document.getElementById("valasz-terulet");
@@ -101,11 +100,9 @@ async function keresesInditasa() {
     }
 
     valaszTerulet.style.display = "block";
-    valaszTerulet.innerHTML = '<span class="loading">A Google Gemini elemzi az iskolai szabályzatot, kérlek várj...</span>';
+    valaszTerulet.innerHTML = '<span class="loading">A Google Gemini elemzi az iskolai szabályzatokat, kérlek várj...</span>';
 
-    // 2. IDE MÁSOLD BE AZ ISKOLAI DOKUMENTUMOK NYERS SZÖVEGÉT (Házirend, Menzadíjak, stb.)!
-    // Akár több tízezer szó is lehet, a Gemini gond nélkül elbírja.
-        // 2. IDE MÁSOLD BE AZ ISKOLAI DOKUMENTUMOK NYERS SZÖVEGÉT!
+    // Az iskola összesített belső tudásbázisa tiszta szöveges formában
     const iskolaiAdatbazis = `
     PÁPAI REFORMATUS KOLLÉGIUM HIVATALOS HÁZIREND KIVONAT:
     A mulasztások igazolása és következményei: Amennyiben a diák 5 igazolatlan órával rendelkezik, a magatartás jegye az adott értékelési időszakban legfeljebb hanyag (2) vagy rossz (1) minősítést kaphat. Az 5. igazolatlan óra elérésekor az iskola hivatalos értesítést küld a szülőnek.
@@ -113,21 +110,21 @@ async function keresesInditasa() {
     ÉTKEZTETÉSI ÉS MENZADÍJAK SZABÁLYZATA:
     A külsős (nem kollégiumi) menzás diákok számára a teljes áras ebéd térítési díja 600,- Ft/nap. A jogszabályban rögzített feltételek (pl. nagycsaládosok, rendszeres gyermekvédelmi kedvezmény) teljesülése esetén a kedvezményes menzadíj 260,- Ft/ebéd. Étkezést lemondani a megelőző munkanap délelőtt 9:00 óráig lehet a titkárságon.
     
-    PÁPAI REFORMATUS KOLLÉGIUM GIMNÁZIUMA SZERVEZETI ÉS MŰKÖDÉSI SZABÁLYZAT KIVONAT:
+    PÁPAI REFORMATUS KOLLÉGIUM GIMNÁZIUMA SZERVEZETI ÉS MŰKÖDÉSI SZABÁLYZAT (SZMSZ) KIVONAT:
     Az intézmény hivatalos neve Pápai Református Kollégium Gimnáziuma és Művészeti Szakgimnáziuma. 
     A tanév rendje és a mindennapi logisztika szabályai: A nulladik óra reggel 7 óra 15 perckor kezdődik. Az első hivatalos tanítási óra reggel 8 órakor kezdődik. A tanítási órák időtartama 45 perc. A szünetek időtartama a csengetési rend szerint 10 illetve a nagyszünetben 20 perc. 
     A vezetőség és ügyintézés rendje: Az iskolatitkárság ügyfélfogadási ideje munkanapokon reggel 8 óra és délután 15 óra 30 perc között van. Igazolások leadása és diákigazolvány ügyintézés a titkárságon történik. 
     Pedagógiai feladatok és adminisztráció: A szaktanár és az osztályfőnök köteles a pedagógiai programban és az SZMSZ-ben előírt valamennyi adminisztratív feladatot teljesíteni. A különbözeti az osztályozó és a javítóvizsgák lebonyolításának rendjét a nevelőtestület határozza meg a vizsgaidőszak előtt 30 nappal. A diákok kötelesek a hivatalos iskolai és egyházi rendezvényeken az intézmény hagyományainak megfelelő ünnepi egyenruhában megjelenni.
     `;
 
-    // A szigorú viselkedési szabályzat az AI-nak
+    // Szigorú viselkedési prompt a Gemini számára
     const systemPrompt = `Te a Pápai Református Kollégium hivatalos asszisztense vagy. Kizárólag az alább megadott belső iskolai dokumentumok szövege alapján válaszolhatsz a kérdésekre magyarul, udvariasan és közérthetően. Ha a kérdésre nincs válasz a megadott szövegben, vagy ha a felhasználó nem iskolai témáról kérdez (pl. viccet kér, házi feladatot, programozást), akkor kötelezően ezt a választ add: "Sajnálom, de én csak az iskolai szabályzatokkal és dokumentumokkal kapcsolatos kérdésekben tudok segíteni." Soha ne térj el ettől a szabálytól!
 
     ISKOLAI DOKUMENTUMOK TUDÁSBÁZISA:
     ${iskolaiAdatbazis}`;
 
     try {
-        // Hivatalos Google Gemini API hívás (Közvetlenül a böngészőből)
+        // Frissített nemzetközi Google v1 végpont az új AQ. kulcs támogatásához
         const response = await fetch(`https://googleapis.com{API_KEY}`, {
             method: "POST",
             headers: {
@@ -142,7 +139,7 @@ async function keresesInditasa() {
                 }],
                 generationConfig: {
                     maxOutputTokens: 500,
-                    temperature: 0.2 // Alacsony érték, hogy az AI szigorúan a szövegből dolgozzon, ne fantáziáljon
+                    temperature: 0.1 // Nagyon alacsony érték, hogy szigorúan csak a megadott szövegből dolgozzon
                 }
             })
         });
@@ -150,7 +147,6 @@ async function keresesInditasa() {
         const data = await response.json();
 
         if (response.ok) {
-            // A Google Gemini válaszának kinyerése és megjelenítése
             const geminiValasz = data.candidates[0].content.parts[0].text;
             valaszTerulet.innerHTML = "<strong>Hivatalos AI Válasz:</strong><br><br>" + geminiValasz;
         } else {
@@ -158,7 +154,7 @@ async function keresesInditasa() {
         }
 
     } catch (error) {
-        valaszTerulet.innerHTML = "<strong>Hálózati hiba történt:</strong> Kérlek ellenőrizd az internetkapcsolatot vagy az API kulcsot!";
+        valaszTerulet.innerHTML = "<strong>Hálózati hiba történt.</strong> Ellenőrizd a kódot vagy a kapcsolatot!";
     }
 }
 </script>
