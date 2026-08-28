@@ -88,8 +88,8 @@
 
 <script>
 async function keresesInditasa() {
-    // Beillesztettük a képeden látható valódi Google Auth API kulcsodat kötelező idézőjelek között
-    const API_KEY = "AQ.Ab8RN6KiP8L7Y2xF4nkanKxIloudF9ibd-3F-ITZYkRn2lsh6w"; 
+    // A te pontos, képen látható működő AQ. kulcsod beillesztve
+    const API_KEY = "AQ.Ab8RN6KoWrKwTLqULx1aOnI0wG-p7uLspCcHc9aWaQ6ulU8uvA"; 
     
     const userQuery = document.getElementById("felhasznalo-kerdes").value;
     const valaszTerulet = document.getElementById("valasz-terulet");
@@ -100,7 +100,7 @@ async function keresesInditasa() {
     }
 
     valaszTerulet.style.display = "block";
-    valaszTerulet.innerHTML = '<span class="loading">A Google Gemini elemzi az iskolai szabályzatokat, kérlek várj...</span>';
+    valaszTerulet.innerHTML = '<span class="loading">A Google Gemini elemzi az szabályzatokat, kérlek várj...</span>';
 
     // Az iskola összesített belső tudásbázisa tiszta szöveges formában
     const iskolaiAdatbazis = `
@@ -117,18 +117,19 @@ async function keresesInditasa() {
     Pedagógiai feladatok és adminisztráció: A szaktanár és az osztályfőnök köteles a pedagógiai programban és az SZMSZ-ben előírt valamennyi adminisztratív feladatot teljesíteni. A különbözeti az osztályozó és a javítóvizsgák lebonyolításának rendjét a nevelőtestület határozza meg a vizsgaidőszak előtt 30 nappal. A diákok kötelesek a hivatalos iskolai és egyházi rendezvényeken az intézmény hagyományainak megfelelő ünnepi egyenruhában megjelenni.
     `;
 
-    // Szigorú viselkedési prompt a Gemini számára
-    const systemPrompt = `Te a Pápai Református Kollégium hivatalos asszisztense vagy. Kizárólag az alább megadott belső iskolai dokumentumok szövege alapján válaszolhatsz a kérdésekre magyarul, udvariasan és közérthetően. Ha a kérdésre nincs válasz a megadott szövegben, vagy ha a felhasználó nem iskolai témáról kérdez (pl. viccet kér, házi feladatot, programozást), akkor kötelezően ezt a választ add: "Sajnálom, de én csak az iskolai szabályzatokkal és dokumentumokkal kapcsolatos kérdésekben tudok segíteni." Soha ne térj el ettől a szabálytól!
+    const systemPrompt = `Te a Pápai Református Kollégium hivatalos asszisztense vagy. Kizárólag az alább megadott belső iskolai dokumentumok szövege alapján válaszolhatsz a kérdésekre magyarul, udvariasan és közérthetően. Ha a kérdésre nincs válasz, akkor kötelezően ezt a választ add: "Sajnálom, de én csak az iskolai szabályzatokkal és dokumentumokkal kapcsolatos kérdésekben tudok segíteni." 
 
     ISKOLAI DOKUMENTUMOK TUDÁSBÁZISA:
     ${iskolaiAdatbazis}`;
 
     try {
-        // Frissített nemzetközi Google v1 végpont az új AQ. kulcs támogatásához
-        const response = await fetch(`https://googleapis.com{API_KEY}`, {
+        // JAVÍTVA: Az új AQ. kulcsokhoz igazított nemzetközi REST végpont
+        const response = await fetch(`https://googleapis.com`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                // Átváltottunk a modern Header alapú OAuth azonosításra, amit az AQ kulcs megkövetel
+                "x-goog-api-key": API_KEY 
             },
             body: JSON.stringify({
                 contents: [{
@@ -139,7 +140,7 @@ async function keresesInditasa() {
                 }],
                 generationConfig: {
                     maxOutputTokens: 500,
-                    temperature: 0.1 // Nagyon alacsony érték, hogy szigorúan csak a megadott szövegből dolgozzon
+                    temperature: 0.1
                 }
             })
         });
@@ -154,7 +155,7 @@ async function keresesInditasa() {
         }
 
     } catch (error) {
-        valaszTerulet.innerHTML = "<strong>Hálózati hiba történt.</strong> Ellenőrizd a kódot vagy a kapcsolatot!";
+        valaszTerulet.innerHTML = "<strong>Kapcsolódási hiba történt.</strong> Kérlek ellenőrizd az internetkapcsolatot!";
     }
 }
 </script>
