@@ -63,16 +63,6 @@ button:hover{
     margin-bottom:15px;
 }
 </style>
-
-<!-- GOOGLE GEMINI HIVATALOS BÖNGÉSZŐS MODUL BETÖLTÉSE (CORS ELLENI VÉDELEM) -->
-<script type="importmap">
-  {
-    "imports": {
-      "@google/generative-ai": "https://esm.run"
-    }
-  }
-</script>
-
 </head>
 <body>
 
@@ -103,31 +93,41 @@ Kérdés elküldése
 
 </div>
 
-<script type="module">
-// Importáljuk a Google hivatalos kliensoldali AI modulját
-import { GoogleGenAI } from '@google/generative-ai';
+<!-- JAVÍTVA: A hivatalos, böngészőbarát Google Generative AI könyvtár betöltése -->
+<script type="importmap">
+  {
+    "imports": {
+      "@google/generative-ai": "https://esm.run"
+    }
+  }
+</script>
 
-function apiKulcsBetoltese() {
+<script type="module">
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Biztosítjuk, hogy a gombok lássák a függvényeket a böngészőben
+window.apiKulcsBetoltese = function() {
     let key = localStorage.getItem("gemini_api_key");
-    if(!key){
+    if(!key || key === "null" || key.trim() === ""){
         key = prompt("Add meg a Gemini API kulcsodat:");
-        if(key){
+        if(key && key.trim() !== ""){
             localStorage.setItem("gemini_api_key", key.trim());
+        } else {
+            return null;
         }
     }
     return key;
 }
 
-// Elérhetővé tesszük a gombnak a globális névtérben
 window.ujKulcs = function() {
     localStorage.removeItem("gemini_api_key");
-    apiKulcsBetoltese();
+    window.apiKulcsBetoltese();
 }
 
 window.kerdezes = async function() {
-    const apiKey = apiKulcsBetoltese();
+    const apiKey = window.apiKulcsBetoltese();
     if(!apiKey){
-        alert("Nincs API kulcs megadva.");
+        alert("Nincs érvényes API kulcs megadva.");
         return;
     }
 
@@ -144,42 +144,40 @@ window.kerdezes = async function() {
     valasz.innerHTML = "Dokumentumok betöltése...";
 
     try{
-        // 1. Az iskolai_dokumentumok.txt beolvasása a GitHubról
+        // 1. Az iskolai dokumentumok beolvasása a GitHubról
         const docResponse = await fetch("./iskolai_dokumentumok.txt");
         if (!docResponse.ok) {
-            throw new Error("Az iskolai_dokumentumok.txt fájl nem található vagy nem olvasható!");
+            throw new Error("Az iskolai_dokumentumok.txt fájl nem érhető el a szerveren!");
         }
         const iskolaiAdatbazis = await docResponse.text();
 
-        const systemPrompt = `Te a Pápai Református Kollégium hivatalos AI asszisztense vagy. KIZÁRÓLAG az alábbi dokumentumok alapján válaszolhatsz. Ha nincs válasz a dokumentumokban, akkor pontosan ezt írd: "Sajnálom, de én csak az iskolai szabályzatokkal és dokumentumokkal kapcsolatos kérdésekben tudok segíteni." DOKUMENTUMOK:\n${iskolaiAdatbazis}`;
+        const systemPrompt = `Te a Pápai Református Kollégium hivatalos AI asszisztense vagy. KIZÁRÓLAG az alábbi dokumentumok alapján válaszolhatsz magyarul. Ha nincs válasz a dokumentumokban, pontosan ezt írd: "Sajnálom, de én csak az iskolai szabályzatokkal és dokumentumokkal kapcsolatos kérdésekben tudok segíteni." DOKUMENTUMOK:\n${iskolaiAdatbazis}`;
 
-        valasz.innerHTML = "A Google Gemini biztonságos feldolgozása folyamatban...";
+        valasz.innerHTML = "A Google Gemini (Llama-szintű) feldolgozása folyamatban...";
 
-        // 2. A Google hivatalos SDK-jának inicializálása (Ez kezeli az AQ. kulcsokat CORS hiba nélkül)
-        const ai = new GoogleGenAI({ apiKey: apiKey });
-        
-        // Meghívjuk a Gemini 1.5 Flash modellt
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: [
-                { role: 'user', parts: [{ text: systemPrompt }] },
-                { role: 'user', parts: [{ text: "Felhasználó kérdése: " + userQuestion }] }
-            ],
-            config: {
-                temperature: 0.1,
-                maxOutputTokens: 500
-            }
+        // 2. JAVÍTVA: A hivatalos SDK osztály meghívása a te AQ. kulcsoddal
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            generationConfig: { temperature: 0.1, maxOutputTokens: 500 }
         });
 
-        // 3. A válasz kinyerése a hivatalos Google függvény segítségével
-        const geminiValasz = response.text || "Nem érkezett válasz.";
+        // Üzenetek összeállítása a hivatalos formátumban
+        const promptText = `${systemPrompt}\n\nFelhasználó kérdése: ${userQuestion}`;
+
+        // Lekérdezés indítása
+        const result = await model.generateContent(promptText);
+        const response = await result.response;
+        
+        // 3. A kész szöveges válasz kinyerése
+        const geminiValasz = response.text();
 
         valasz.innerHTML = "<strong>AI válasz:</strong><br><br>" + geminiValasz;
 
     }
     catch(err){
         console.error(err);
-        valasz.innerHTML = "<strong>Hiba:</strong><br>" + err.message;
+        valasz.innerHTML = "<strong>Hiba történt:</strong><br>" + err.message;
     }
 }
 </script>
