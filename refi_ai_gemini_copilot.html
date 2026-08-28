@@ -94,7 +94,6 @@ Kérdés elküldése
 </div>
 
 <script>
-// Alapértelmezett beállítások és a kulcs kezelése
 function apiKulcsBetoltese() {
     let key = localStorage.getItem("gemini_api_key");
     if(!key || key === "null" || key.trim() === ""){
@@ -113,7 +112,6 @@ function ujKulcs(){
     apiKulcsBetoltese();
 }
 
-// Az oldal betöltésekor azonnal ellenőrizzük a kulcsot, hogy felugorjon az ablak
 window.onload = function() {
     apiKulcsBetoltese();
 }
@@ -147,41 +145,42 @@ async function kerdezes(){
 
         const systemPrompt = `Te a Pápai Református Kollégium hivatalos AI asszisztense vagy. KIZÁRÓLAG az alábbi dokumentumok alapján válaszolhatsz magyarul. Ha nincs válasz a dokumentumokban, pontosan ezt írd: "Sajnálom, de én csak az iskolai szabályzatokkal és dokumentumokkal kapcsolatos kérdésekben tudok segíteni." DOKUMENTUMOK:\n${iskolaiAdatbazis}`;
 
-        valasz.innerHTML = "A Google Gemini feldolgozása folyamatban...";
+        valasz.innerHTML = "Kapcsolódás a Google Gemini biztonságos szerveréhez...";
 
-        // 2. GOLYÓÁLLÓ MEGOLDÁS: Közvetlen REST API hívás az AQ. kulcsokhoz igazított biztonságos fejléc-beállítással
-        const response = await fetch(
-            "https://googleapis.com",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": apiKey  // Ez a fejléc küldi el biztonságosan az AQ. kulcsot CORS hiba nélkül
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                { text: systemPrompt + "\n\nFelhasználó kérdése: " + userQuestion }
-                            ]
-                        }
-                    ],
-                    generationConfig: {
-                        temperature: 0.1,
-                        maxOutputTokens: 500
+        // JAVÍTVA: Beépítettük a nemzetközi, ingyenes CORS-Anywhere proxy-t az URL elé!
+        const proxyUrl = "https://herokuapp.com";
+        const targetUrl = "https://googleapis.com";
+
+        // 2. Biztonságos hálózati kérés küldése a Proxyn keresztül
+        const response = await fetch(proxyUrl + targetUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": apiKey,
+                // Ez a fejléc jelzi a proxynak, hogy honnan érkezik a kérés szabályosan
+                "X-Requested-With": "XMLHttpRequest" 
+            },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        parts: [
+                            { text: systemPrompt + "\n\nFelhasználó kérdése: " + userQuestion }
+                        ]
                     }
-                })
-            }
-        );
+                ],
+                generationConfig: {
+                    temperature: 0.1,
+                    maxOutputTokens: 500
+                }
+            })
+        });
 
         const data = await response.json();
-        console.log(data);
 
         if(!response.ok){
-            throw new Error(data?.error?.message || "Ismeretlen API hiba");
+            throw new Error(data?.error?.message || "Ismeretlen API hiba. Ellenőrizd a kulcsodat!");
         }
 
-        // 3. A kész szöveges válasz kinyerése a Google hivatalos JSON adatstruktúrájából
         const geminiValasz = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Nem érkezett válasz.";
 
         valasz.innerHTML = "<strong>AI válasz:</strong><br><br>" + geminiValasz;
