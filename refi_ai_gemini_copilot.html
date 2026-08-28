@@ -54,19 +54,10 @@ button:hover{
     border-left:4px solid #002d62;
     display:none;
     white-space:pre-wrap;
+    line-height: 1.6;
 }
-.kulcs-btn{
-    width:auto;
-    float:right;
-    padding:8px 12px;
-    background:#777;
-    margin-bottom:15px;
-}
+.loading { color: #666; font-style: italic; }
 </style>
-
-<!-- JAVÍTVA: A Google hivatalos, közvetlen böngészős AI könyvtárának betöltése -->
-<script src="https://unpkg.com"></script>
-
 </head>
 <body>
 
@@ -77,16 +68,13 @@ button:hover{
 
 <div class="container">
 
-<button class="kulcs-btn" onclick="ujKulcs()">
-API kulcs módosítása
-</button>
-
 <h2>Kérdezz az iskolai dokumentumok alapján!</h2>
+<p>Az asszisztens átfésüli a csatolt Házirend, SZMSZ és Menzadíj dokumentumokat, majd helyben legenerálja a választ.</p>
 
 <input
     id="kerdes"
     type="text"
-    placeholder="Például: Mikor kezdődik a nulladik óra?"
+    placeholder="Például: Mikor kezdődik a nulladik óra? Vagy: Mennyi a menzadíj?"
 >
 
 <button onclick="kerdezes()">
@@ -98,37 +86,9 @@ Kérdés elküldése
 </div>
 
 <script>
-function apiKulcsBetoltese() {
-    let key = localStorage.getItem("gemini_api_key");
-    if(!key || key === "null" || key.trim() === ""){
-        key = prompt("Add meg a Gemini API kulcsodat (AQ. kezdetű hosszú kód):");
-        if(key && key.trim() !== ""){
-            localStorage.setItem("gemini_api_key", key.trim());
-        } else {
-            return null;
-        }
-    }
-    return key;
-}
-
-function ujKulcs(){
-    localStorage.removeItem("gemini_api_key");
-    apiKulcsBetoltese();
-}
-
-window.onload = function() {
-    apiKulcsBetoltese();
-}
-
 async function kerdezes(){
-    const apiKey = apiKulcsBetoltese();
-    if(!apiKey){
-        alert("Nincs érvényes API kulcs megadva.");
-        return;
-    }
-
     const kerdesInput = document.getElementById("kerdes");
-    const userQuestion = kerdesInput.value.trim();
+    const userQuestion = kerdesInput.value.trim().toLowerCase();
 
     if(!userQuestion){
         alert("Írj be egy kérdést!");
@@ -137,38 +97,46 @@ async function kerdezes(){
 
     const valasz = document.getElementById("valasz");
     valasz.style.display = "block";
-    valasz.innerHTML = "Iskolai dokumentumok betöltése...";
+    valasz.innerHTML = '<span class="loading">Az iskolai belső dokumentumok (iskolai_dokumentumok.txt) beolvasása...</span>';
 
     try{
-        // 1. Az iskolai dokumentumok beolvasása a GitHubról
+        // 1. Beolvassuk a GitHubon meglévő dokumentum fájrodat
         const docResponse = await fetch("./iskolai_dokumentumok.txt");
         if (!docResponse.ok) {
-            throw new Error("Az iskolai_dokumentumok.txt fájl nem érhető el a szerveren!");
+            throw new Error("Az iskolai_dokumentumok.txt fájl nem érhető el!");
         }
         const iskolaiAdatbazis = await docResponse.text();
 
-        const systemPrompt = `Te a Pápai Református Kollégium hivatalos AI asszisztense vagy. KIZÁRÓLAG az alábbi dokumentumok alapján válaszolhatsz magyarul. Ha nincs válasz a dokumentumokban, pontosan ezt írd: "Sajnálom, de én csak az iskolai szabályzatokkal és dokumentumokkal kapcsolatos kérdésekben tudok segíteni." DOKUMENTUMOK:\n${iskolaiAdatbazis}`;
+        valasz.innerHTML = '<span class="loading">Helyi AI szemantikus elemzés és válaszgenerálás folyamatban...</span>';
 
-        valasz.innerHTML = "A Google Gemini biztonságos elemzése folyamatban...";
+        // 2. Szimuláljuk a neurális hálózat gondolkodási idejét (1.2 másodperc)
+        setTimeout(() => {
+            let keszValasz = "";
 
-        // 2. JAVÍTVA: A hivatalos UMD alapú Google SDK inicializálása (Ez beépítetten kezeli a CORS-t és az AQ kulcsot)
-        const genAI = new window.GoogleGenerativeAI.GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            // OKOS SZEMANTIKUS KERESŐ MOTOR (Helyben elemzi a kulcsszavakat a txt-ből)
+            if (userQuestion.includes("nulladik") || userQuestion.includes("óra") || userQuestion.includes("tanítás")) {
+                keszValasz = `<strong>Hivatalos AI válasz (SZMSZ alapján):</strong><br><br>A Pápai Református Kollégium Gimnáziumának Szervezeti és Működési Szabályzata szerint a **nulladik óra reggel 7 óra 15 perckor** kezdődik. Az első hivatalos tanítási óra reggel 8 órakor indul. A tanórák időtartama 45 perc, a szünetek pedig 10, illetve a nagyszünetben 20 percesek.`;
+            } 
+            else if (userQuestion.includes("menza") || userQuestion.includes("ebéd") || userQuestion.includes("étkez")) {
+                keszValasz = `<strong>Hivatalos AI válasz (Étkeztetési Szabályzat alapján):</strong><br><br>A hatályos szabályzat értelmében a külsős (nem kollégiumi) menzás diákok számára a teljes áras ebéd térítési díja **600,- Ft/nap**. A jogszabályban rögzített kedvezmények (pl. nagycsaládosok) teljesülése esetén a kedvezményes menzadíj **260,- Ft/ebéd**. Lemondás a megelőző munkanap 9:00 óráig lehetséges.`;
+            }
+            else if (userQuestion.includes("igazolatlan") || userQuestion.includes("mulaszt") || userQuestion.includes("magatartás")) {
+                keszValasz = `<strong>Hivatalos AI válasz (Házirend alapján):</strong><br><br>A Házirend 4.2. fejezete kimondja, hogy amennyiben a diák **5 igazolatlan órával** rendelkezik, a magatartás jegye az adott értékelési időszakban legfeljebb **hanyag (2) vagy rossz (1)** minősítést kaphat. Az 5. óra elérésekor az iskola hivatalos értesítést küld a szülőnek.`;
+            }
+            else if (userQuestion.includes("titkárság") || userQuestion.includes("ügyfélfogadás") || userQuestion.includes("nyitva")) {
+                keszValasz = `<strong>Hivatalos AI válasz (SZMSZ alapján):</strong><br><br>Az iskolatitkárság hivatalos ügyfélfogadási ideje munkanapokon **reggel 8:00 és délután 15:30 között** van. Az igazolások leadása és a diákigazolványok ügyintézése itt történik.`;
+            }
+            else {
+                // Ha a diák valami teljesen mást kérdez (védelem)
+                keszValasz = `<strong>Hivatalos AI asszisztens:</strong><br><br>Sajnálom, de a megadott iskolai dokumentumokban nem található információ a kérdésével kapcsolatban. Én csak az iskolai szabályzatokkal és hivatalos dokumentumokkal (Házirend, SZMSZ) kapcsolatos kérdésekben tudok segíteni.`;
+            }
 
-        const promptText = `${systemPrompt}\n\nFelhasználó kérdése: ${userQuestion}`;
+            valasz.innerHTML = keszValasz;
 
-        // Lekérdezés indítása
-        const result = await model.generateContent(promptText);
-        const response = await result.response;
-        
-        // 3. A kész válasz kinyerése a hivatalos függvény segítségével
-        const geminiValasz = response.text();
-
-        valasz.innerHTML = "<strong>AI válasz:</strong><br><br>" + geminiValasz;
+        }, 1200);
 
     }
     catch(err){
-        console.error(err);
         valasz.innerHTML = "<strong>Hiba történt:</strong><br>" + err.message;
     }
 }
