@@ -105,6 +105,7 @@ async function keresesInditasa() {
 
     // 2. IDE MÁSOLD BE AZ ISKOLAI DOKUMENTUMOK NYERS SZÖVEGÉT (Házirend, Menzadíjak, stb.)!
     // Akár több tízezer szó is lehet, a Gemini gond nélkül elbírja.
+        // 2. IDE MÁSOLD BE AZ ISKOLAI DOKUMENTUMOK NYERS SZÖVEGÉT!
     const iskolaiAdatbazis = `
     PÁPAI REFORMATUS KOLLÉGIUM HIVATALOS HÁZIREND KIVONAT:
     A mulasztások igazolása és következményei: Amennyiben a diák 5 igazolatlan órával rendelkezik, a magatartás jegye az adott értékelési időszakban legfeljebb hanyag (2) vagy rossz (1) minősítést kaphat. Az 5. igazolatlan óra elérésekor az iskola hivatalos értesítést küld a szülőnek.
@@ -112,7 +113,11 @@ async function keresesInditasa() {
     ÉTKEZTETÉSI ÉS MENZADÍJAK SZABÁLYZATA:
     A külsős (nem kollégiumi) menzás diákok számára a teljes áras ebéd térítési díja 600,- Ft/nap. A jogszabályban rögzített feltételek (pl. nagycsaládosok, rendszeres gyermekvédelmi kedvezmény) teljesülése esetén a kedvezményes menzadíj 260,- Ft/ebéd. Étkezést lemondani a megelőző munkanap délelőtt 9:00 óráig lehet a titkárságon.
     
-    Ide illesztheted a többi szabályzat szövegét is egymás alá...
+    PÁPAI REFORMATUS KOLLÉGIUM GIMNÁZIUMA SZERVEZETI ÉS MŰKÖDÉSI SZABÁLYZAT KIVONAT:
+    Az intézmény hivatalos neve Pápai Református Kollégium Gimnáziuma és Művészeti Szakgimnáziuma. 
+    A tanév rendje és a mindennapi logisztika szabályai: A nulladik óra reggel 7 óra 15 perckor kezdődik. Az első hivatalos tanítási óra reggel 8 órakor kezdődik. A tanítási órák időtartama 45 perc. A szünetek időtartama a csengetési rend szerint 10 illetve a nagyszünetben 20 perc. 
+    A vezetőség és ügyintézés rendje: Az iskolatitkárság ügyfélfogadási ideje munkanapokon reggel 8 óra és délután 15 óra 30 perc között van. Igazolások leadása és diákigazolvány ügyintézés a titkárságon történik. 
+    Pedagógiai feladatok és adminisztráció: A szaktanár és az osztályfőnök köteles a pedagógiai programban és az SZMSZ-ben előírt valamennyi adminisztratív feladatot teljesíteni. A különbözeti az osztályozó és a javítóvizsgák lebonyolításának rendjét a nevelőtestület határozza meg a vizsgaidőszak előtt 30 nappal. A diákok kötelesek a hivatalos iskolai és egyházi rendezvényeken az intézmény hagyományainak megfelelő ünnepi egyenruhában megjelenni.
     `;
 
     // A szigorú viselkedési szabályzat az AI-nak
