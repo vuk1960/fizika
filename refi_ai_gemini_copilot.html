@@ -63,6 +63,10 @@ button:hover{
     margin-bottom:15px;
 }
 </style>
+
+<!-- JAVÍTVA: A Google hivatalos, közvetlen böngészős AI könyvtárának betöltése -->
+<script src="https://unpkg.com"></script>
+
 </head>
 <body>
 
@@ -145,43 +149,20 @@ async function kerdezes(){
 
         const systemPrompt = `Te a Pápai Református Kollégium hivatalos AI asszisztense vagy. KIZÁRÓLAG az alábbi dokumentumok alapján válaszolhatsz magyarul. Ha nincs válasz a dokumentumokban, pontosan ezt írd: "Sajnálom, de én csak az iskolai szabályzatokkal és dokumentumokkal kapcsolatos kérdésekben tudok segíteni." DOKUMENTUMOK:\n${iskolaiAdatbazis}`;
 
-        valasz.innerHTML = "Kapcsolódás a Google Gemini biztonságos szerveréhez...";
+        valasz.innerHTML = "A Google Gemini biztonságos elemzése folyamatban...";
 
-        // JAVÍTVA: Beépítettük a nemzetközi, ingyenes CORS-Anywhere proxy-t az URL elé!
-        const proxyUrl = "https://herokuapp.com";
-        const targetUrl = "https://googleapis.com";
+        // 2. JAVÍTVA: A hivatalos UMD alapú Google SDK inicializálása (Ez beépítetten kezeli a CORS-t és az AQ kulcsot)
+        const genAI = new window.GoogleGenerativeAI.GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // 2. Biztonságos hálózati kérés küldése a Proxyn keresztül
-        const response = await fetch(proxyUrl + targetUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": apiKey,
-                // Ez a fejléc jelzi a proxynak, hogy honnan érkezik a kérés szabályosan
-                "X-Requested-With": "XMLHttpRequest" 
-            },
-            body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [
-                            { text: systemPrompt + "\n\nFelhasználó kérdése: " + userQuestion }
-                        ]
-                    }
-                ],
-                generationConfig: {
-                    temperature: 0.1,
-                    maxOutputTokens: 500
-                }
-            })
-        });
+        const promptText = `${systemPrompt}\n\nFelhasználó kérdése: ${userQuestion}`;
 
-        const data = await response.json();
-
-        if(!response.ok){
-            throw new Error(data?.error?.message || "Ismeretlen API hiba. Ellenőrizd a kulcsodat!");
-        }
-
-        const geminiValasz = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Nem érkezett válasz.";
+        // Lekérdezés indítása
+        const result = await model.generateContent(promptText);
+        const response = await result.response;
+        
+        // 3. A kész válasz kinyerése a hivatalos függvény segítségével
+        const geminiValasz = response.text();
 
         valasz.innerHTML = "<strong>AI válasz:</strong><br><br>" + geminiValasz;
 
