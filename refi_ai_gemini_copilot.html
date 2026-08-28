@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Pápai Református Kollégium - AI Asszisztens</title>
-
 <style>
 body{
     font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;
@@ -13,13 +11,11 @@ body{
     background:#f4f6f9;
     color:#333;
 }
-
 header{
     background:#002d62;
     color:white;
     padding:20px 40px;
 }
-
 .container{
     max-width:900px;
     margin:30px auto;
@@ -28,7 +24,6 @@ header{
     border-radius:12px;
     box-shadow:0 4px 15px rgba(0,0,0,.08);
 }
-
 input{
     width:100%;
     padding:12px;
@@ -38,7 +33,6 @@ input{
     margin-bottom:15px;
     font-size:16px;
 }
-
 button{
     background:#0066cc;
     color:white;
@@ -50,11 +44,9 @@ button{
     font-size:16px;
     font-weight:bold;
 }
-
 button:hover{
     background:#004499;
 }
-
 #valasz{
     margin-top:20px;
     padding:20px;
@@ -63,7 +55,6 @@ button:hover{
     display:none;
     white-space:pre-wrap;
 }
-
 .kulcs-btn{
     width:auto;
     float:right;
@@ -72,6 +63,15 @@ button:hover{
     margin-bottom:15px;
 }
 </style>
+
+<!-- GOOGLE GEMINI HIVATALOS BÖNGÉSZŐS MODUL BETÖLTÉSE (CORS ELLENI VÉDELEM) -->
+<script type="importmap">
+  {
+    "imports": {
+      "@google/generative-ai": "https://esm.run"
+    }
+  }
+</script>
 
 </head>
 <body>
@@ -93,7 +93,20 @@ API kulcs módosítása
     id="kerdes"
     type="text"
     placeholder="Például: Mikor kezdődik a nulladik óra?"
-><script>
+>
+
+<button onclick="kerdezes()">
+Kérdés elküldése
+</button>
+
+<div id="valasz"></div>
+
+</div>
+
+<script type="module">
+// Importáljuk a Google hivatalos kliensoldali AI modulját
+import { GoogleGenAI } from '@google/generative-ai';
+
 function apiKulcsBetoltese() {
     let key = localStorage.getItem("gemini_api_key");
     if(!key){
@@ -105,12 +118,13 @@ function apiKulcsBetoltese() {
     return key;
 }
 
-function ujKulcs(){
+// Elérhetővé tesszük a gombnak a globális névtérben
+window.ujKulcs = function() {
     localStorage.removeItem("gemini_api_key");
     apiKulcsBetoltese();
 }
 
-async function kerdezes(){
+window.kerdezes = async function() {
     const apiKey = apiKulcsBetoltese();
     if(!apiKey){
         alert("Nincs API kulcs megadva.");
@@ -130,49 +144,35 @@ async function kerdezes(){
     valasz.innerHTML = "Dokumentumok betöltése...";
 
     try{
-        // Beolvassuk a mellette lévő txt fájlt
+        // 1. Az iskolai_dokumentumok.txt beolvasása a GitHubról
         const docResponse = await fetch("./iskolai_dokumentumok.txt");
+        if (!docResponse.ok) {
+            throw new Error("Az iskolai_dokumentumok.txt fájl nem található vagy nem olvasható!");
+        }
         const iskolaiAdatbazis = await docResponse.text();
 
         const systemPrompt = `Te a Pápai Református Kollégium hivatalos AI asszisztense vagy. KIZÁRÓLAG az alábbi dokumentumok alapján válaszolhatsz. Ha nincs válasz a dokumentumokban, akkor pontosan ezt írd: "Sajnálom, de én csak az iskolai szabályzatokkal és dokumentumokkal kapcsolatos kérdésekben tudok segíteni." DOKUMENTUMOK:\n${iskolaiAdatbazis}`;
 
-        valasz.innerHTML = "A Gemini feldolgozza a dokumentumokat...";
+        valasz.innerHTML = "A Google Gemini biztonságos feldolgozása folyamatban...";
+
+        // 2. A Google hivatalos SDK-jának inicializálása (Ez kezeli az AQ. kulcsokat CORS hiba nélkül)
+        const ai = new GoogleGenAI({ apiKey: apiKey });
         
-        // JAVÍTVA: Átváltottunk a stabil v1-re az AQ. kulcs miatt!
-        const response = await fetch(
-            "https://googleapis.com",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": apiKey
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                { text: systemPrompt },
-                                { text: "Felhasználó kérdése: " + userQuestion }
-                            ]
-                        }
-                    ],
-                    generationConfig: {
-                        temperature: 0.1,
-                        maxOutputTokens: 500
-                    }
-                })
+        // Meghívjuk a Gemini 1.5 Flash modellt
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: [
+                { role: 'user', parts: [{ text: systemPrompt }] },
+                { role: 'user', parts: [{ text: "Felhasználó kérdése: " + userQuestion }] }
+            ],
+            config: {
+                temperature: 0.1,
+                maxOutputTokens: 500
             }
-        );
+        });
 
-        const data = await response.json();
-        console.log(data);
-
-        if(!response.ok){
-            throw new Error(data?.error?.message || "Ismeretlen API hiba");
-        }
-
-        // JAVÍTVA: A pontos Google REST JSON adatstruktúra kiolvasása (tömbök nélkül)
-        const geminiValasz = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Nem érkezett válasz.";
+        // 3. A válasz kinyerése a hivatalos Google függvény segítségével
+        const geminiValasz = response.text || "Nem érkezett válasz.";
 
         valasz.innerHTML = "<strong>AI válasz:</strong><br><br>" + geminiValasz;
 
@@ -183,16 +183,6 @@ async function kerdezes(){
     }
 }
 </script>
-
-
-<button onclick="kerdezes()">
-Kérdés elküldése
-</button>
-
-<div id="valasz"></div>
-
-</div>
-
 
 </body>
 </html>
