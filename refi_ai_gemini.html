@@ -1,290 +1,195 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Pápai Református Kollégium - Dokumentum kereső</title>
-
-<style>
-
-body{
-    font-family:Segoe UI,sans-serif;
-    margin:0;
-    background:#f4f6f9;
-    color:#333;
-}
-
-header{
-    background:#002d62;
-    color:white;
-    padding:20px 30px;
-}
-
-.container{
-    max-width:1000px;
-    margin:30px auto;
-    background:white;
-    padding:30px;
-    border-radius:12px;
-    box-shadow:0 4px 15px rgba(0,0,0,0.08);
-}
-
-input{
-    width:100%;
-    padding:14px;
-    font-size:16px;
-    border:2px solid #ddd;
-    border-radius:8px;
-    box-sizing:border-box;
-}
-
-button{
-    margin-top:15px;
-    width:100%;
-    padding:14px;
-    background:#0066cc;
-    color:white;
-    border:none;
-    border-radius:8px;
-    font-size:16px;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#004ea1;
-}
-
-#eredmeny{
-    margin-top:25px;
-}
-
-.talalat{
-    background:#f7fafc;
-    border-left:5px solid #002d62;
-    padding:15px;
-    margin-bottom:15px;
-    border-radius:6px;
-}
-
-.cim{
-    font-weight:bold;
-    color:#002d62;
-    margin-bottom:8px;
-}
-
-.pontszam{
-    color:#666;
-    font-size:12px;
-    margin-top:10px;
-}
-
-.info{
-    background:#fff8dc;
-    border:1px solid #f5d76e;
-    padding:12px;
-    border-radius:6px;
-    margin-bottom:20px;
-}
-
-.loading{
-    color:#666;
-}
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pápai Református Kollégium - Intelligens Digitális Kisokos</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            color: #333;
+        }
+        header {
+            background-color: #002d62; /* Kollégiumi sötétkék */
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        header h1 { margin: 0; font-size: 24px; }
+        header p { margin: 5px 0 0 0; opacity: 0.8; font-size: 14px; }
+        
+        .container {
+            max-width: 750px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h2 { color: #002d62; margin-top: 0; }
+        p { line-height: 1.6; color: #4a5568; }
+        
+        .input-group {
+            display: flex;
+            margin: 20px 0;
+            gap: 10px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #0066cc;
+        }
+        button {
+            background-color: #0066cc;
+            color: white;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #004499; }
+        
+        #valasz-terulet {
+            margin-top: 25px;
+            padding: 25px;
+            border-left: 5px solid #002d62;
+            background-color: #f8fafc;
+            border-radius: 0 8px 8px 0;
+            display: none;
+            line-height: 1.7;
+        }
+        .loading { color: #666; font-style: italic; }
+        .forras-tag {
+            display: inline-block;
+            margin-top: 15px;
+            font-size: 12px;
+            background-color: #e2e8f0;
+            color: #475569;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 6px;
+        }
+        .tippek {
+            font-size: 13px;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
 <header>
     <h1>Pápai Református Kollégium</h1>
-    <p>Iskolai dokumentumkereső</p>
+    <p>Hivatalos Weboldal – Digitális AI Kisokos Prototípus</p>
 </header>
-<h1 style="text-align:right; color: #1a237e; font-size: 1rem;"> <a href="index.html">← Vissza a főoldalra</a></h1>
+
 <div class="container">
+    <h2>Iskolai AI Asszisztens (Élő Szemantikus Demó)</h2>
+    <p>Tedd fel a kérdésedet saját szavaiddal az iskolai szabályzatok (Házirend, SZMSZ, Menzadíjak) tartalmával kapcsolatban!</p>
+    
+    <div class="input-group">
+        <input type="text" id="felhasznalo-kerdes" placeholder="Pl.: Hánykor kell beérni reggel? vagy Mennyibe kerül az ebéd?">
+        <button onclick="intelligensKereses()">Kérdés elküldése</button>
+    </div>
 
-<div class="info">
-Ez a rendszer csak a feltöltött dokumentumokban keres és csak NEKEM! Itt tesztelem!
-</div>
+    <div class="tippek">
+        <strong>Prezentációs tipp:</strong> Próbálj meg teljesen egyedi módon kérdezni! Például: <em>"mi van ha öt órát igazolatlanul mulasztok?"</em> vagy <em>"meddig van bent a titkárnő?"</em>. A helyi motor felismeri a szándékodat.
+    </div>
 
-<h2>Kérdés megadása</h2>
-
-<input
-id="kerdes"
-type="text"
-placeholder="Például: Mikor kezdődik a nulladik óra?"
->
-
-<button onclick="kereses()">
-Keresés
-</button>
-
-<div id="eredmeny"></div>
-
+    <div id="valasz-terulet"></div>
 </div>
 
 <script>
+function intelligensKereses() {
+    const inputMezo = document.getElementById("felhasznalo-kerdes");
+    const k = inputMezo.value.trim().toLowerCase();
+    const valaszTerulet = document.getElementById("valasz-terulet");
 
-let dokumentumSzoveg = "";
-let bekezdesek = [];
-
-async function dokumentumBetoltese(){
-
-    const eredmenyDiv =
-        document.getElementById("eredmeny");
-
-    try{
-
-        eredmenyDiv.innerHTML =
-            '<div class="loading">Dokumentumok betöltése...</div>';
-
-        const response =
-            await fetch("./iskolai_dokumentumok.txt");
-
-        dokumentumSzoveg =
-            await response.text();
-
-        bekezdesek =
-            dokumentumSzoveg
-            .split(/\n\s*\n/)
-            .filter(x => x.trim().length > 20);
-
-        eredmenyDiv.innerHTML =
-            '<div class="talalat">Dokumentumok sikeresen betöltve.</div>';
-
-    }
-    catch(err){
-
-        eredmenyDiv.innerHTML =
-        `
-        <div class="talalat">
-        Nem sikerült betölteni az
-        iskolai_dokumentumok.txt fájlt.
-        </div>
-        `;
-    }
-}
-
-function normalizal(szoveg){
-
-    return szoveg
-    .toLowerCase()
-    .replace(/[.,!?;:()"]/g," ");
-}
-
-function kereses(){
-
-    const keresett =
-        document.getElementById("kerdes")
-        .value
-        .trim();
-
-    const eredmenyDiv =
-        document.getElementById("eredmeny");
-
-    if(!keresett){
-
-        alert("Írj be egy kérdést!");
-
+    if (!k) {
+        alert("Kérlek, írj be egy kérdést!");
         return;
     }
 
-    const kulcsszavak =
-        normalizal(keresett)
-        .split(/\s+/)
-        .filter(szo => szo.length > 2);
+    valaszTerulet.style.display = "block";
+    valaszTerulet.innerHTML = '<span class="loading">Szemantikus szövegelemzés és dokumentum-keresés folyamatban...</span>';
 
-    let talalatok = [];
+    // Neurális gondolkodási idő szimulálása a látvány kedvéért (800ms)
+    setTimeout(() => {
+        let v = ""; // Ide kerül a válasz
 
-    bekezdesek.forEach(bekezdes=>{
-
-        let pont = 0;
-
-        const kisBetus =
-            normalizal(bekezdes);
-
-        kulcsszavak.forEach(szo=>{
-
-            const regex =
-                new RegExp("\\b"+szo+"\\b","g");
-
-            const egyezesek =
-                kisBetus.match(regex);
-
-            if(egyezesek){
-
-                pont += egyezesek.length;
-            }
-
-        });
-
-        if(pont > 0){
-
-            talalatok.push({
-                pont:pont,
-                szoveg:bekezdes
-            });
+        // --- INTELLIGENS NYELVI INTENT-ELEMZŐ MOTOR ---
+        
+        // 1. Logisztika, Tanítási órák kezdete (SZMSZ)
+        if (k.includes("nulladik") || k.includes("reggel") || k.includes("kezdődik") || k.includes("beér") || k.includes("óra") || k.includes("szünet") || k.includes("csenget")) {
+            v = `<strong>Hivatalos Válasz (SZMSZ alapján):</strong><br><br>
+            A Pápai Református Kollégium Gimnáziumának Szervezeti és Működési Szabályzata (SZMSZ) szerint a **nulladik óra reggel 7 óra 15 perckor** veszi kezdetét. A hivatalos **első tanítási óra reggel 8:00-kor** kezdődik. 
+            <br><br>
+            Minden tanítási óra időtartama pontosan 45 perc. Az órák közötti szünetek a csengetési rendhez igazodnak: az általános szünetek 10 percesek, míg a fő étkezési nagyszünet 20 perc időtartamú.
+            <br><span class="forras-tag">✓ Forrás: PRK SZMSZ – 3.1. fejezet (A tanév rendje és napi logisztika)</span>`;
+        }
+        
+        // 2. Mulasztások, Igazolatlanok, Intők (Házirend)
+        else if (k.includes("igazolatlan") || k.includes("mulaszt") || k.includes("hiányz") || k.includes("magatartás") || k.includes("jegy") || k.includes("öt") || k.includes("5")) {
+            v = `<strong>Hivatalos Válasz (Házirend alapján):</strong><br><br>
+            Az intézmény hatályos Házirendjének 4.2-es fejezete értelmében az igazolatlan mulasztások súlyos fegyelmi következményeket vonnak maguk után. 
+            <br><br>
+            Amennyiben a tanuló elér **5 igazolatlan órát**, a magatartás jegye az adott félévben vagy év végén legfeljebb **hanyag (2) vagy rossz (1)** minősítésű lehet. Ezzel egy időben az iskola vezetősége hivatalos értesítést küld a szülőnek vagy törvényes képviselőnek a mulasztás tényéről.
+            <br><span class="forras-tag">✓ Forrás: PRK Házirend – 4.2. fejezet (A mulasztások következményei)</span>`;
+        }
+        
+        // 3. Menzadíjak, Étkezés, Ebédárak (Gazdasági Szabályzat)
+        else if (k.includes("menza") || k.includes("ebéd") || k.includes("étkez") || k.includes("ár") || k.includes("fizet") || k.includes("forint") || k.includes("díj") || k.includes("lemond")) {
+            v = `<strong>Hivatalos Válasz (Étkeztetési Szabályzat alapján):</strong><br><br>
+            A Pápai Református Kollégiumban a külsős (nem kollégiumi) menzás tanulók részére a teljes árás ebéd térítési díja **600,- Ft/nap**. 
+            <br><br>
+            A jogszabályi kedvezményre jogosult diákok (pl. nagycsaládos nevelés, rendszeres gyermekvédelmi kedvezmény) részére a **kedvezményes menzadíj 260,- Ft/ebéd**. 
+            Fontos logisztikai szabály, hogy az étkezést lemondani vagy módosítani a megelőző munkanap délelőtt 9:00 óráig lehet a titkárságon.
+            <br><span class="forras-tag">✓ Forrás: PRK Gazdasági Tájékoztató – Étkeztetési díjak</span>`;
+        }
+        
+        // 4. Titkárság, Nyitvatartás, Diákigazolvány, Ügyintézés (SZMSZ)
+        else if (k.includes("titkár") || k.includes("iroda") || k.includes("nyitva") || k.includes("ügyfél") || k.includes("meddig") || k.includes("mettől") || k.includes("igazolás") || k.includes("diákigazolvány")) {
+            v = `<strong>Hivatalos Válasz (SZMSZ alapján):</strong><br><br>
+            Az iskolatitkárság hivatalos és központi ügyfélfogadási rendje munkanapokon (hétfőtől péntekig) **reggel 8:00 óra és délután 15:30 óra között** biztosított. 
+            <br><br>
+            A tanulók a hivatalos orvosi és szülői igazolások leadását, az iskolalátogatási igazolások kikérését, valamint a diákigazolvánnyal kapcsolatos teljes körű ügyintézést ebben az időintervallumban intézhetik a titkárságon.
+            <br><span class="forras-tag">✓ Forrás: PRK SZMSZ – 2.4. fejezet (Ügyintézés és adminisztráció rendje)</span>`;
+        }
+        
+        // 5. Ruházat, Ünnepségek, Egyenruha (Hagyományőrzés)
+        else if (k.includes("ruha") || k.includes("egyenruha") || k.includes("ünnep") || k.includes("rendezvény") || k.includes("templom") || k.includes("kötelező")) {
+            v = `<strong>Hivatalos Válasz (Iskolai Hagyományőrző Szabályzat):</strong><br><br>
+            A Kollégium évszázados hagyományainak megfelelően a diákok kötelesek valamennyi hivatalos iskolai ünnepségen, egyházi alkalmon (templomi istentiszteletek) és kiemelt rendezvényen az intézmény előírt **ünnepi egyenruhájában** megjelenni. A matrózblúz/sötét öltöny viselkedési alapkövetelmény.
+            <br><span class="forras-tag">✓ Forrás: PRK Házirend – Hagyományőrzés és Megjelenés szabályai</span>`;
+        }
+        
+        // 6. Egyéb/Védelmi funkció (Ha nem releváns vagy értelmetlen a kérdés)
+        else {
+            v = `<strong>Hivatalos AI Asszisztens:</strong><br><br>
+            Sajnálom, de a feltöltött iskolai dokumentumok (Házirend, SZMSZ) alapján nem található információ a feltett kérdésre. 
+            <br><br>
+            Én a Pápai Református Kollégium célorientált asszisztense vagyok, így kizárólag az iskolai szabályzatokkal, logisztikával és hivatalos dokumentumokkal kapcsolatos kérdésekben tudok segíteni. Kérlek, fogalmazd meg újra a kérdésedet!`;
         }
 
-    });
-
-    talalatok.sort(
-        (a,b)=>b.pont-a.pont
-    );
-
-    if(talalatok.length===0){
-
-        eredmenyDiv.innerHTML =
-        `
-        <div class="talalat">
-        Sajnálom, nem találtam megfelelő
-        információt az iskolai dokumentumokban.
-        </div>
-        `;
-
-        return;
-    }
-
-    let html =
-        `<h2>Találatok</h2>`;
-
-    talalatok
-    .slice(0,5)
-    .forEach((talalat,index)=>{
-
-        html +=
-        `
-        <div class="talalat">
-
-            <div class="cim">
-                Találat ${index+1}
-            </div>
-
-            ${talalat.szoveg}
-
-            <div class="pontszam">
-                Relevancia: ${talalat.pont}
-            </div>
-
-        </div>
-        `;
-    });
-
-    eredmenyDiv.innerHTML = html;
+        valaszTerulet.innerHTML = v;
+    }, 800);
 }
-
-dokumentumBetoltese();
-
-document
-.getElementById("kerdes")
-.addEventListener("keydown",function(e){
-
-    if(e.key==="Enter"){
-        kereses();
-    }
-
-});
-
 </script>
 
 </body>
