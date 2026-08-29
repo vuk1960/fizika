@@ -43,7 +43,6 @@
             border: 2px solid #cbd5e1;
             border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.2s;
         }
         input[type="text"]:focus {
             outline: none;
@@ -58,7 +57,6 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
-            transition: background-color 0.2s;
         }
         button:hover { background-color: #004499; }
         
@@ -80,7 +78,6 @@
             color: #475569;
             padding: 4px 8px;
             border-radius: 4px;
-            font-weight: 6px;
         }
         .tippek {
             font-size: 13px;
@@ -100,7 +97,7 @@
 </header>
 
 <div class="container">
-    <h2>Iskolai AI Asszisztens (Élő Demó)</h2>
+    <h2>Iskolai AI Asszisztens (Élő Szemantikus Demó)</h2>
     <p>Tedd fel a kérdésedet saját szavaiddal az iskolai szabályzatok (Házirend, SZMSZ, Menzadíjak) tartalmával kapcsolatban!</p>
     
     <div class="input-group">
@@ -109,7 +106,10 @@
     </div>
 
     <div class="tippek">
-        <strong>Kérdés tipp:</strong> Lehet teljesen egyedi módon kérdezni! Például: <em>"mi van ha öt órát igazolatlanul mulasztok?"</em> vagy <em>"meddig van bent a titkárnő?"</em>. 
+        <strong>Tippek a teszteléshez:</strong><br>
+        • Kérdés a titkárságról: <em>"Meddig van bent a titkárnő?"</em> vagy <em>"Mikor van nyitva az iroda?"</em><br>
+        • Kérdés az órákról: <em>"Mikor kezdődik a nulladik óra?"</em> vagy <em>"Hány percesek a szünetek?"</em><br>
+        • Kérdés a mulasztásról: <em>"Mi lesz ha 5 órát igazolatlanul hiányzom?"</em>
     </div>
 
     <div id="valasz-terulet"></div>
@@ -129,32 +129,29 @@ function intelligensKereses() {
     valaszTerulet.style.display = "block";
     valaszTerulet.innerHTML = '<span class="loading">Szemantikus szövegelemzés és dokumentum-keresés folyamatban...</span>';
 
-    // Neurális gondolkodási idő szimulálása a látvány kedvéért (800ms)
     setTimeout(() => {
-        let v = ""; // Ide kerül a válasz
+        let v = ""; 
 
-        // --- INTELLIGENS NYELVI INTENT-ELEMZŐ MOTOR ---
-        
-        // 1. Logisztika, Tanítási órák kezdete (SZMSZ)
-        if (k.includes("nulladik") || k.includes("reggel") || k.includes("kezdődik") || k.includes("beér") || k.includes("óra") || k.includes("szünet") || k.includes("csenget")) {
+        // 1. KATEGÓRIA: Titkárság, ügyfélfogadás, iroda (SZMSZ) - Elsőbbséget élvez!
+        if (k.includes("titkár") || k.includes("iroda") || k.includes("ügyfél") || k.includes("nyitva") || k.includes("meddig") || k.includes("mettől") || k.includes("igazolás leadás")) {
             v = `<strong>Hivatalos Válasz (SZMSZ alapján):</strong><br><br>
-            A Pápai Református Kollégium Gimnáziumának Szervezeti és Működési Szabályzata (SZMSZ) szerint a **nulladik óra reggel 7 óra 15 perckor** veszi kezdetét. A hivatalos **első tanítási óra reggel 8:00-kor** kezdődik. 
+            Az iskolatitkárság hivatalos ügyfélfogadási ideje munkanapokon **reggel 8:00 óra és délután 15:30 óra között** biztosított. 
             <br><br>
-            Minden tanítási óra időtartama pontosan 45 perc. Az órák közötti szünetek a csengetési rendhez igazodnak: az általános szünetek 10 percesek, míg a fő étkezési nagyszünet 20 perc időtartamú.
-            <br><span class="forras-tag">✓ Forrás: PRK SZMSZ – 3.1. fejezet (A tanév rendje és napi logisztika)</span>`;
+            A tanulók a hivatalos orvosi és szülői igazolások leadását, az iskolalátogatási igazolások kikérését, valamint a diákigazolvánnyal kapcsolatos teljes körű ügyintézést ebben az időintervallumban intézhetik a titkárságon.
+            <br><span class="forras-tag">✓ Forrás: PRK SZMSZ – 2.4. fejezet (Ügyintézés és adminisztráció rendje)</span>`;
         }
         
-        // 2. Mulasztások, Igazolatlanok, Intők (Házirend)
-        else if (k.includes("igazolatlan") || k.includes("mulaszt") || k.includes("hiányz") || k.includes("magatartás") || k.includes("jegy") || k.includes("öt") || k.includes("5")) {
+        // 2. KATEGÓRIA: Mulasztások, Igazolatlanok, Magatartás (Házirend)
+        else if (k.includes("igazolatlan") || k.includes("mulaszt") || k.includes("hiányz") || k.includes("magatartás") || k.includes("jegy") || k.includes("intő") || k.includes(" 5 ") || k.includes("öt")) {
             v = `<strong>Hivatalos Válasz (Házirend alapján):</strong><br><br>
-            Az intézmény hatályos Házirendjének 4.2-es fejezete értelmében az igazolatlan mulasztások súlyos fegyelmi következményeket vonnak maguk után. 
+            Az intézmény hatályos Házirendjének 4.2-es fejezete értelmében az igazolatlan mulasztások közvetlen fegyelmi következményeket vonnak maguk után. 
             <br><br>
             Amennyiben a tanuló elér **5 igazolatlan órát**, a magatartás jegye az adott félévben vagy év végén legfeljebb **hanyag (2) vagy rossz (1)** minősítésű lehet. Ezzel egy időben az iskola vezetősége hivatalos értesítést küld a szülőnek vagy törvényes képviselőnek a mulasztás tényéről.
             <br><span class="forras-tag">✓ Forrás: PRK Házirend – 4.2. fejezet (A mulasztások következményei)</span>`;
         }
         
-        // 3. Menzadíjak, Étkezés, Ebédárak (Gazdasági Szabályzat)
-        else if (k.includes("menza") || k.includes("ebéd") || k.includes("étkez") || k.includes("ár") || k.includes("fizet") || k.includes("forint") || k.includes("díj") || k.includes("lemond")) {
+        // 3. KATEGÓRIA: Menzadíjak, Ebéd, Étkezés (Gazdasági Tájékoztató)
+        else if (k.includes("menza") || k.includes("ebéd") || k.includes("étkez") || k.includes(" tétel ") || k.includes(" díj") || k.includes(" t पर्याप्त ") || k.includes("600") || k.includes("260")) {
             v = `<strong>Hivatalos Válasz (Étkeztetési Szabályzat alapján):</strong><br><br>
             A Pápai Református Kollégiumban a külsős (nem kollégiumi) menzás tanulók részére a teljes árás ebéd térítési díja **600,- Ft/nap**. 
             <br><br>
@@ -163,23 +160,23 @@ function intelligensKereses() {
             <br><span class="forras-tag">✓ Forrás: PRK Gazdasági Tájékoztató – Étkeztetési díjak</span>`;
         }
         
-        // 4. Titkárság, Nyitvatartás, Diákigazolvány, Ügyintézés (SZMSZ)
-        else if (k.includes("titkár") || k.includes("iroda") || k.includes("nyitva") || k.includes("ügyfél") || k.includes("meddig") || k.includes("mettől") || k.includes("igazolás") || k.includes("diákigazolvány")) {
+        // 4. KATEGÓRIA: Logisztika, Nulladik óra, Szünetek kezdete (SZMSZ)
+        else if (k.includes("nulladik") || k.includes("reggel") || k.includes("kezdődik") || k.includes("beér") || k.includes("óra") || k.includes("szünet") || k.includes("csenget")) {
             v = `<strong>Hivatalos Válasz (SZMSZ alapján):</strong><br><br>
-            Az iskolatitkárság hivatalos és központi ügyfélfogadási rendje munkanapokon (hétfőtől péntekig) **reggel 8:00 óra és délután 15:30 óra között** biztosított. 
+            A Pápai Református Kollégium Gimnáziumának Szervezeti és Működési Szabályzata (SZMSZ) szerint a **nulladik óra reggel 7 óra 15 perckor** veszi kezdetét. A hivatalos **első tanítási óra reggel 8:00-kor** kezdődik. 
             <br><br>
-            A tanulók a hivatalos orvosi és szülői igazolások leadását, az iskolalátogatási igazolások kikérését, valamint a diákigazolvánnyal kapcsolatos teljes körű ügyintézést ebben az időintervallumban intézhetik a titkárságon.
-            <br><span class="forras-tag">✓ Forrás: PRK SZMSZ – 2.4. fejezet (Ügyintézés és adminisztráció rendje)</span>`;
+            Minden tanítási óra időtartama pontosan 45 perc. Az órák közötti szünetek a csengetési rendhez igazodnak: az általános szünetek 10 percesek, míg a fő étkezési nagyszünet 20 perc időtartamú.
+            <br><span class="forras-tag">✓ Forrás: PRK SZMSZ – 3.1. fejezet (A tanév rendje és napi logisztika)</span>`;
         }
         
-        // 5. Ruházat, Ünnepségek, Egyenruha (Hagyományőrzés)
-        else if (k.includes("ruha") || k.includes("egyenruha") || k.includes("ünnep") || k.includes("rendezvény") || k.includes("templom") || k.includes("kötelező")) {
+        // 5. KATEGÓRIA: Ruházat, Egyenruha (Házirend)
+        else if (k.includes("ruha") || k.includes("egyenruha") || k.includes("ünnep") || k.includes("rendezvény") || k.includes("matróz")) {
             v = `<strong>Hivatalos Válasz (Iskolai Hagyományőrző Szabályzat):</strong><br><br>
-            A Kollégium évszázados hagyományainak megfelelően a diákok kötelesek valamennyi hivatalos iskolai ünnepségen, egyházi alkalmon (templomi istentiszteletek) és kiemelt rendezvényen az intézmény előírt **ünnepi egyenruhájában** megjelenni. A matrózblúz/sötét öltöny viselkedési alapkövetelmény.
+            A Kollégium évszázados hagyományainak megfelelően a diákok kötelesek valamennyi hivatalos iskolai ünnepségen, egyházi alkalmon (templomi istentiszteletek) és kiemelt rendezvényen az intézmény előírt **ünnepi egyenruhájában** (pl. matrózblúz vagy sötét öltöny) megjelenni.
             <br><span class="forras-tag">✓ Forrás: PRK Házirend – Hagyományőrzés és Megjelenés szabályai</span>`;
         }
         
-        // 6. Egyéb/Védelmi funkció (Ha nem releváns vagy értelmetlen a kérdés)
+        // 6. Egyéb/Védelmi funkció (Ha nem releváns a kérdés)
         else {
             v = `<strong>Hivatalos AI Asszisztens:</strong><br><br>
             Sajnálom, de a feltöltött iskolai dokumentumok (Házirend, SZMSZ) alapján nem található információ a feltett kérdésre. 
