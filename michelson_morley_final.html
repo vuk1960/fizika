@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Michelson–Morley-kísérlet</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --laser-a: #ef4444;
+            --laser-b: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+        }
+
+        .nav-links button {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .nav-links button.active {
+            color: var(--accent);
+            background-color: #eff6ff;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .page {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 850px) {
+            .page {
+                grid-template-columns: 3fr 2fr;
+            }
+        }
+
+        .page.active {
+            display: grid;
+        }
+
+        .visual-container {
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 520px;
+        }
+
+        canvas {
+            background-color: #fafafa;
+            border-radius: 0.5rem;
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            aspect-ratio: 1;
+        }
+
+        .content-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+
+        p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+
+        .fringe-wrapper {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 1rem;
+            text-align: left;
+        }
+
+        .fringe-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .fringe-preview {
+            width: 100%;
+            height: 45px;
+            background: repeating-linear-gradient(
+                90deg,
+                #000,
+                #000 12px,
+                #3b82f6 16px,
+                #000 20px,
+                #000 32px
+            );
+            border-radius: 0.4rem;
+            margin-bottom: 12px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+        }
+
+        #fringeTheoretical {
+            transition: background-position 0.2s linear;
+        }
+
+        #fringeReal {
+            background-position: 0px 0px !important;
+        }
+
+        .formula {
+            background-color: #f1f5f9;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 0.95rem;
+            color: #334155;
+            margin: 1rem 0;
+            border-left: 4px solid var(--accent);
+        }
+
+        .interactive-detector-hint {
+            font-size: 0.85rem;
+            color: #10b981;
+            font-weight: 600;
+            margin-top: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav>
+            <div class="logo">MM-Interferométer</div>
+            <ul class="nav-links">
+                <li><button id="nav-p1" class="active" onclick="switchPage(1)">1. Kísérleti összeállítás</button></li>
+                <li><button id="nav-p2" onclick="switchPage(2)">2. Éterszél</button></li>
+                <li><button id="nav-p3" onclick="switchPage(3)">3. Interferencia</button></li>
+<li><button onclick="window.close();" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
+    Vissza a prezentációhoz</button></li>
+</button>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- 1. OLDAL -->
+        <section id="page1" class="page active">
+            <div class="visual-container">
+                <canvas id="canvasSetup" width="500" height="500" style="cursor: pointer;"></canvas>
+                <div class="interactive-detector-hint">Kattints a zöld DETEKTORRA a hullámok vizsgálatához!</div>
+                <div class="controls">
+                    <button class="btn" onclick="togglePulse()">Animáció indítása / Leállítása</button>
+                </div>
+            </div>
+            <div class="content-container">
+                <h1>A kísérleti összeállítás</h1>
+                <p>Albert A. Michelson és Edward W. Morley 1887-ben építette meg azt a precíziós optikai eszközt, amellyel az éter létezését szerették volna bizonyítani.</p>
+                
+                <p>A fényút most már **folyamatos és hiánytalan**: elindul a forrásból, eléri a nyalábosztót, szétválik a tükrök felé, majd visszaverődés után tökéletesen lefut a detektorba.</p>
+
+                <div class="badge-list">
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #eab308;"></div>
+                        <div><strong>Fényforrás:</strong> Folyamatos monokromatikus fénysugarat bocsát ki.</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #a855f7;"></div>
+                        <div><strong>Nyalábosztó:</strong> Féligáteresztő tükör, amely a fény felét átengedi, felét visszaveri.</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #64748b;"></div>
+                        <div><strong>Tükrök (T1 és T2):</strong> Visszaverik a sugarakat a középpont felé.</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #10b981;"></div>
+                        <div><strong>Detektor:</strong> Ahol a sugarak találkoznak és interferálnak.</div>
+                    </div>
+                </div>
+                <div class="controls" style="margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="switchPage(2)">Következő oldal: Éterszél →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. OLDAL -->
+        <section id="page2" class="page">
+            <div class="visual-container">
+                <canvas id="canvasEther" width="500" height="500" style="cursor: pointer;"></canvas>
+                <div class="interactive-detector-hint">Kattints a zöld DETEKTORRA a hullámok vizsgálatához!</div>
+                <div class="controls">
+                    <button class="btn" id="etherModeBtn" onclick="toggleEtherMode()">Éterszél: BE</button>
+                </div>
+                
+                <div class="fringe-wrapper">
+                    <span class="fringe-label">🔴 ELMÉLET (Ha LÉTEZNE az éter - Elcsúszó mintázat):</span>
+                    <div id="fringeTheoretical" class="fringe-preview"></div>
+                    
+                    <span class="fringe-label">🟢 VALÓSÁG (Amit valójában mértek - STABIL):</span>
+                    <div id="fringeReal" class="fringe-preview"></div>
+                </div>
+            </div>
+            <div class="content-container">
+                <h1>Éterszél szimuláció</h1>
+                <p>Ha létezne éter, a Föld mozgása miatt fellépő "éterszél" megváltoztatná a fény terjedési sebességét a különböző karokban.</p>
+                
+                <p>Nézd meg jól az animációt: az éterszél hatására a **kék és piros fényjelek mozgása aszinkronná válik, az egyik látványosan lemarad**, így a detektorba időkülönbséggel érkeznek meg!</p>
+                
+                <p>Emiatt az elmélet szerint a csíkoknak el kellene tolódniuk (felnagyított felső ábra), de a valóságban semmi sem változott (alsó ábra), azaz az éter nem létezik.</p>
+            </div>
+        </section>
+
+        <!-- 3. OLDAL: MIKROSZKOPIKUS INTERFERENCIA -->
+        <section id="page3" class="page">
+            <div class="visual-container">
+                <canvas id="canvasWaves" width="500" height="400"></canvas>
+                <div class="controls">
+                    <button class="btn" id="phaseBtn" onclick="togglePhaseShift()">Fáziseltolódás (Éterszél hatása): KI</button>
+                </div>
+            </div>
+            <div class="content-container">
+                <h1>Hullám-interferencia a Detektorban</h1>
+                <p>Ez a nézet azt mutatja be, mi történik közvetlenül a detektor lencséje mögött, amikor a két karból visszaérkező fényhullámok találkoznak.</p>
+                
+                <h3 style="color: #10b981; margin-bottom: 0.5rem;">Erősítés (Fázisban vannak):</h3>
+                <p>Amikor nincs éterszél (vagy a valóságot nézzük), a két hullámhegy és hullámvölgy tökéletesen egybeesik. A két hullám **erősíti egymást**, és az eredő hullám kétszer akkora lesz. Világos csíkot látunk.</p>
+                
+                <h3 style="color: #ef4444; margin-bottom: 0.5rem;">Gyengítés / Kioltás (Fáziseltolódás):</h3>
+                <p>Kapcsold be a **Fáziseltolódást** a gombbal! Ha az éterszél időkülönbséget okozna, az egyik hullám elcsúszna. Amikor a hullámhegy a hullámvölggyel találkozik, a hullámok **teljesen kioltják egymást** (az eredő sárga vonal kisimul). Sötét csík keletkezik.</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function switchPage(pageNum) {
+            document.getElementById('page1').classList.remove('active');
+            document.getElementById('page2').classList.remove('active');
+            document.getElementById('page3').classList.remove('active');
+            document.getElementById('nav-p1').classList.remove('active');
+            document.getElementById('nav-p2').classList.remove('active');
+            document.getElementById('nav-p3').classList.remove('active');
+            
+            document.getElementById('page' + pageNum).classList.add('active');
+            document.getElementById('nav-p' + pageNum).classList.add('active');
+        }
+
+        // Kattintásérzékelés a detektorra
+        function checkDetectorClick(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (500 / rect.width);
+            const y = (e.clientY - rect.top) * (500 / rect.height);
+            // Detektor zóna: x ~ [230, 270], y ~ [390, 440]
+            if (x >= 220 && x <= 280 && y >= 380 && y <= 450) {
+                switchPage(3);
+            }
+        }
+
+        document.getElementById('canvasSetup').addEventListener('click', function(e) { checkDetectorClick(e, this); });
+        document.getElementById('canvasEther').addEventListener('click', function(e) { checkDetectorClick(e, this); });
+
+        // --- 1. OLDAL LOGIKA ---
+        const canvas1 = document.getElementById('canvasSetup');
+        const ctx1 = canvas1.getContext('2d');
+        let pulseActive = true;
+        let t1 = 0;
+
+        function togglePulse() { pulseActive = !pulseActive; }
+
+        function drawSetup() {
+            ctx1.clearRect(0, 0, 500, 500);
+            const cx = 250, cy = 250, len = 140;
+
+            // Alkatrészek
+            ctx1.fillStyle = '#eab308'; ctx1.fillRect(50, cy - 15, 30, 30);
+            ctx1.fillStyle = '#0f172a'; ctx1.font = 'bold 12px sans-serif'; ctx1.fillText('Fényforrás', 35, cy - 25);
+            ctx1.fillStyle = '#64748b'; ctx1.fillRect(cx - 30, cy - len - 8, 60, 8); ctx1.fillText('Tükör (T1)', cx - 30, cy - len - 16);
+            ctx1.fillRect(cx + len, cy - 30, 8, 60); ctx1.fillText('Tükör (T2)', cx + len + 15, cy + 5);
+            ctx1.fillStyle = '#10b981'; ctx1.fillRect(cx - 20, cy + len + 10, 40, 25); ctx1.fillText('Detektor', cx - 25, cy + len + 52);
+
+            // Nyalábosztó
+            ctx1.save(); ctx1.translate(cx, cy); ctx1.rotate(Math.PI / 4); ctx1.fillStyle = '#a855f7'; ctx1.fillRect(-30, -3, 60, 6); ctx1.restore();
+            ctx1.fillText('Nyalábosztó', cx + 15, cy - 15);
+
+            if (pulseActive) {
+                t1 += 2;
+                if (t1 > 520) t1 = 0;
+            }
+
+            // HÁTTÉR SUGARAK (Mindig látszódnak!)
+            ctx1.lineWidth = 3;
+            ctx1.strokeStyle = 'rgba(239, 68, 68, 0.25)'; // Alap sugarak halvány pirossal
+            ctx1.beginPath();
+            ctx1.moveTo(80, cy); ctx1.lineTo(cx, cy); // Forrástól osztóig
+            ctx1.lineTo(cx, cy - len); // Osztótól T1-ig
+            ctx1.moveTo(cx, cy); ctx1.lineTo(cx + len, cy); // Osztótól T2-ig
+            ctx1.moveTo(cx, cy); ctx1.lineTo(cx, cy + len + 10); // Osztótól detektorig
+            ctx1.stroke();
+
+            // ANIMÁLT FÉNYGOLYÓK (Folyamatos út!)
+            if (t1 < 170) {
+                // Sugár a forrástól a nyalábosztóig
+                drawDot(ctx1, 80 + t1, cy, '#ef4444');
+            } else {
+                let d = t1 - 170; // Út a nyalábosztótól mérve
+                
+                // Kar 1 (Függőleges ág - Piros)
+                if (d < len) {
+                    drawDot(ctx1, cx, cy - d, '#ef4444'); // Felfelé tükörhöz
+                } else if (d < len * 2) {
+                    drawDot(ctx1, cx, (cy - len) + (d - len), '#ef4444'); // Vissza le nyalábosztóhoz
+                } else if (d >= len * 2 && d < len * 2 + len + 10) {
+                    drawDot(ctx1, cx, cy + (d - len * 2), '#ef4444'); // Le a detektorba!
+                }
+
+                // Kar 2 (Vízszintes ág - Kék)
+                if (d < len) {
+                    drawDot(ctx1, cx + d, cy, '#3b82f6'); // Jobbra tükörhöz
+                } else if (d < len * 2) {
+                    drawDot(ctx1, (cx + len) - (d - len), cy, '#3b82f6'); // Vissza balra nyalábosztóhoz
+                } else if (d >= len * 2 && d < len * 2 + len + 10) {
+                    drawDot(ctx1, cx, cy + (d - len * 2), '#3b82f6'); // Le a detektorba!
+                }
+            }
+
+            requestAnimationFrame(drawSetup);
+        }
+
+        function drawDot(ctx, x, y, color) {
+            ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // --- 2. OLDAL LOGIKA ---
+        const canvas2 = document.getElementById('canvasEther');
+        const ctx2 = canvas2.getContext('2d');
+        const fringeTheoretical = document.getElementById('fringeTheoretical');
+
+        let etherActive = true;
+        let t2 = 0;
+        let linesX = [];
+        for(let i=0; i<12; i++) linesX.push({x: Math.random()*500, y: Math.random()*500, len: Math.random()*40+20});
+
+        function toggleEtherMode() {
+            etherActive = !etherActive;
+            document.getElementById('etherModeBtn').innerText = etherActive ? "Éterszél: BE" : "Éterszél: KI";
+            document.getElementById('etherModeBtn').style.backgroundColor = etherActive ? "var(--accent)" : "#64748b";
+        }
+
+        function drawEtherPage() {
+            ctx2.clearRect(0, 0, 500, 500);
+            const cx = 250, cy = 230, len = 140;
+
+            if (etherActive) {
+                ctx2.strokeStyle = 'rgba(59, 130, 246, 0.12)'; ctx2.lineWidth = 2;
+                linesX.forEach(l => { l.x += 3; if(l.x > 500) l.x = -l.len; ctx2.beginPath(); ctx2.moveTo(l.x, l.y); ctx2.lineTo(l.x + l.len, l.y); ctx2.stroke(); });
+                ctx2.fillStyle = '#3b82f6'; ctx2.font = 'bold 12px sans-serif'; ctx2.fillText('Feltételezett Éterszél áramlás ➔', 20, 30);
+            }
+
+            // Fix alkatrészek
+            ctx2.fillStyle = '#eab308'; ctx2.fillRect(50, cy - 15, 30, 30);
+            ctx2.fillStyle = '#0f172a'; ctx2.font = 'bold 12px sans-serif'; ctx2.fillText('Fényforrás', 35, cy - 25);
+            ctx2.fillStyle = '#64748b'; ctx2.fillRect(cx - 30, cy - len - 8, 60, 8); ctx2.fillText('Tükör (T1)', cx - 30, cy - len - 16);
+            ctx2.fillRect(cx + len, cy - 30, 8, 60); ctx2.fillText('Tükör (T2)', cx + len + 15, cy + 5);
+            ctx2.fillStyle = '#10b981'; ctx2.fillRect(cx - 20, cy + len + 10, 40, 25); ctx2.fillText('Detektor', cx - 25, cy + len + 52);
+
+            ctx2.save(); ctx2.translate(cx, cy); ctx2.rotate(Math.PI / 4); ctx2.fillStyle = '#a855f7'; ctx2.fillRect(-30, -3, 60, 6); ctx2.restore();
+            ctx2.fillText('Nyalábosztó', cx + 15, cy - 15);
+
+            // Folyamatos háttér sugarak a 2. oldalon is
+            ctx2.lineWidth = 3; ctx2.strokeStyle = 'rgba(239, 68, 68, 0.25)';
+            ctx2.beginPath(); ctx2.moveTo(80, cy); ctx2.lineTo(cx, cy); ctx2.lineTo(cx, cy - len); ctx2.moveTo(cx, cy); ctx2.lineTo(cx + len, cy); ctx2.moveTo(cx, cy); ctx2.lineTo(cx, cy + len + 10); ctx2.stroke();
+
+            t2 += 2;
+            if (t2 > 550) t2 = 0;
+
+            // Éterszél hatása: Az egyik kar lemarad (időbeli fáziskülönbség)
+            let lag = etherActive ? 30 : 0; 
+
+            // Piros nyaláb mozgása (Függőleges kar)
+            if (t2 < 170) {
+                drawDot(ctx2, 80 + t2, cy, '#ef4444');
+            } else {
+                let d = t2 - 170;
+                if (d < len) drawDot(ctx2, cx, cy - d, '#ef4444');
+                else if (d < len * 2) drawDot(ctx2, cx, (cy - len) + (d - len), '#ef4444');
+                else if (d >= len * 2 && d < len * 2 + len + 10) drawDot(ctx2, cx, cy + (d - len * 2), '#ef4444');
+            }
+
+            // Kék nyaláb mozgása (Vízszintes kar - az éterszél miatt késik vagy siet)
+            if (t2 < 170) {
+                drawDot(ctx2, 80 + t2, cy, '#3b82f6');
+            } else {
+                let d = (t2 - 170) - lag; // Késleltetés alkalmazása az osztó után
+                if (d > 0) {
+                    if (d < len) drawDot(ctx2, cx + d, cy, '#3b82f6');
+                    else if (d < len * 2) drawDot(ctx2, (cx + len) - (d - len), cy, '#3b82f6');
+                    else if (d >= len * 2 && d < len * 2 + len + 10) drawDot(ctx2, cx, cy + (d - len * 2), '#3b82f6');
+                } else {
+                    // Ha a lag miatt még nem ért el az osztóhoz a kék pont képzeletben
+                    drawDot(ctx2, cx, cy, '#3b82f6');
+                }
+            }
+
+            // Elméleti eltolódás animálása (Folyamatosan hullámzik / eltolódik, ha be van kapcsolva)
+            if (etherActive) {
+                let shift = (Math.sin(eTime * 2) + 1) * 60; 
+                fringeTheoretical.style.backgroundPosition = `${shift}px 0px`;
+            } else {
+                fringeTheoretical.style.backgroundPosition = `0px 0px`;
+            }
+
+            requestAnimationFrame(drawEtherPage);
+        }
+
+        // --- 3. OLDAL LOGIKA (Hullámok és fázisok) ---
+        const canvas3 = document.getElementById('canvasWaves');
+        const ctx3 = canvas3.getContext('2d');
+        let phaseShiftActive = false;
+        let wTime = 0;
+
+        function togglePhaseShift() {
+            phaseShiftActive = !phaseShiftActive;
+            document.getElementById('phaseBtn').innerText = phaseShiftActive ? "Fáziseltolódás (Éterszél hatása): BE" : "Fáziseltolódás (Éterszél hatása): KI";
+            document.getElementById('phaseBtn').style.backgroundColor = phaseShiftActive ? "#ef4444" : "var(--accent)";
+        }
+
+        function drawWavesPage() {
+            ctx3.clearRect(0, 0, 500, 400);
+            wTime += 0.1;
+
+            let waveLength = 25;
+            let amplitude = 30;
+            let startY1 = 80;
+            let startY2 = 180;
+            let startY3 = 300;
+
+            // 1. Hullám (Piros - 1. Karból)
+            ctx3.strokeStyle = '#ef4444'; ctx3.lineWidth = 3; ctx3.beginPath();
+            for(let x=40; x<460; x++) {
+                let y = startY1 + Math.sin((x / waveLength) - wTime) * amplitude;
+                if(x===40) ctx3.moveTo(x, y); else ctx3.lineTo(x, y);
+            }
+            ctx3.stroke();
+            ctx3.fillStyle = '#0f172a'; ctx3.font = 'bold 12px sans-serif'; ctx3.fillText('1. Karból visszaérkező hullám', 40, startY1 - 40);
+
+            // 2. Hullám (Kék - 2. Karból, éterszél esetén eltolva)
+            let currentShift = phaseShiftActive ? Math.PI : 0; // Teljes kioltás (180 fok / Pi)
+            ctx3.strokeStyle = '#3b82f6'; ctx3.lineWidth = 3; ctx3.beginPath();
+            for(let x=40; x<460; x++) {
+                let y = startY2 + Math.sin((x / waveLength) - wTime + currentShift) * amplitude;
+                if(x===40) ctx3.moveTo(x, y); else ctx3.lineTo(x, y);
+            }
+            ctx3.stroke();
+            ctx3.fillText('2. Karból visszaérkező hullám', 40, startY2 - 40);
+
+            // 3. Eredő hullám (Szuperpozíció - Sárga/Zöld)
+            ctx3.strokeStyle = phaseShiftActive ? '#64748b' : '#10b981'; ctx3.lineWidth = 4; ctx3.beginPath();
+            for(let x=40; x<460; x++) {
+                let y1 = Math.sin((x / waveLength) - wTime) * amplitude;
+                let y2 = Math.sin((x / waveLength) - wTime + currentShift) * amplitude;
+                let y = startY3 + (y1 + y2);
+                if(x===40) ctx3.moveTo(x, y); else ctx3.lineTo(x, y);
+            }
+            ctx3.stroke();
+            ctx3.fillStyle = phaseShiftActive ? '#ef4444' : '#10b981';
+            ctx3.fillText(phaseShiftActive ? 'EREDŐ HULLÁM: KIOLTÁS (Sötét csík)' : 'EREDŐ HULLÁM: ERŐSÍTÉS (Világos csík)', 40, startY3 - 50);
+
+            requestAnimationFrame(drawWavesPage);
+        }
+
+        // Globális időzítő az étercsíkokhoz
+        let eTime = 0;
+        setInterval(() => { eTime += 0.05; }, 50);
+
+        drawSetup();
+        drawEtherPage();
+        drawWavesPage();
+    </script>
+</body>
+</html>

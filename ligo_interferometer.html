@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A LIGO működése és a Gravitációs Hullámok</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #06b6d4;
+            --accent-hover: #0891b2;
+            --laser-a: #ef4444;
+            --laser-b: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #334155;
+        }
+
+        nav {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 1rem;
+        }
+
+        .nav-links button {
+            background: none;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .nav-links button.active {
+            color: #ffffff;
+            background-color: var(--accent);
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .page {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 850px) {
+            .page {
+                grid-template-columns: 1.2fr 1fr;
+            }
+        }
+
+        .page.active {
+            display: grid;
+        }
+
+        .visual-container {
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 520px;
+            border: 1px solid #334155;
+        }
+
+        canvas {
+            background-color: #0b0f19;
+            border-radius: 0.5rem;
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            aspect-ratio: 1;
+            border: 1px solid #1e293b;
+        }
+
+        .content-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+
+        p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        .controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.2);
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: #334155;
+            color: var(--text-main);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+
+        .badge-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .badge-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            background: rgba(255,255,255,0.02);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .badge-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-top: 5px;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .fringe-wrapper {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+
+        .fringe-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .fringe-preview {
+            width: 100%;
+            height: 45px;
+            background: repeating-linear-gradient(
+                90deg,
+                #000,
+                #000 12px,
+                #06b6d4 16px,
+                #000 20px,
+                #000 32px
+            );
+            border-radius: 0.4rem;
+            margin-bottom: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        #fringeSignal {
+            transition: background-position 0.1s linear;
+        }
+
+        .formula {
+            background-color: #1e293b;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 0.95rem;
+            color: #e2e8f0;
+            margin: 1rem 0;
+            border-left: 4px solid var(--accent);
+            border-top: 1px solid #334155;
+            border-right: 1px solid #334155;
+            border-bottom: 1px solid #334155;
+        }
+
+        .det-btn-hint {
+            font-size: 0.8rem;
+            color: var(--accent);
+            margin-top: 0.5rem;
+            animation: pulseText 2s infinite;
+            cursor: pointer;
+        }
+
+        @keyframes pulseText {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav>
+            <div class="logo">LIGO Szimuláció</div>
+            <ul class="nav-links">
+                <li><button id="nav-p1" class="active" onclick="switchPage(1)">1. LIGO felépítése</button></li>
+                <li><button id="nav-p2" onclick="switchPage(2)">2. Gravitációs hullámok</button></li>
+                <li><button id="nav-p3" onclick="switchPage(3)">3. Interferencia </button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- 1. OLDAL: LIGO SETUP -->
+        <section id="page1" class="page active">
+            <div class="visual-container">
+                <canvas id="canvasSetup" width="500" height="500" style="cursor:pointer;" onclick="checkDetectorClick(event, 1)"></canvas>
+                <div class="controls">
+                    <button class="btn" onclick="togglePulse()">Lézersugár indítása / Leállítása</button>
+                </div>
+                <div class="det-btn-hint" onclick="switchPage(3)">💡 Kattints a zöld fotodetektorra a hullám-szintű elemzéshez!</div>
+            </div>
+            <div class="content-container">
+                <h1>A LIGO interferométer</h1>
+                <p>A <strong>LIGO</strong> (Laser Interferometer Gravitational-Wave Observatory) a világ legérzékenyebb mérőműszere. Alapja egy hatalmas Michelson-interferométer, amely nem az étert, hanem a téridő fodrozódásait méri.</p>
+                
+                <div class="badge-list">
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #06b6d4; color: #06b6d4;"></div>
+                        <div><strong>Lézerforrás:</strong> Extrém stabil, nagy teljesítményű monokromatikus infravörös lézersugarat bocsát ki.</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #a855f7; color: #a855f7;"></div>
+                        <div><strong>Nyalábosztó tükör:</strong> A lézerfényt két egymásra merőleges, egyenként 4 kilométer hosszú vákuumcsőbe (karba) osztja szét.</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #64748b; color: #64748b;"></div>
+                        <div><strong>Függesztett végtükrök:</strong> Szuperprecíz, nehéz teszttömegek, amelyek teljesen el vannak szigetelve a környezeti rezgésektől, így szabadon reagálnak a tér változásaira.</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #10b981; color: #10b981;"></div>
+                        <div><strong>Fotodetektor:</strong> Méri a visszaérkező lézersugarak találkozásakor keletkező interferenciamintázatot.</div>
+                    </div>
+                </div>
+                <div class="controls" style="margin-top: 1.5rem;">
+                    <button class="btn btn-secondary" onclick="switchPage(2)">Következő: Gravitációs hullámok →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. OLDAL: GRAVITÁCIÓS HULLÁMOK -->
+        <section id="page2" class="page">
+            <div class="visual-container">
+                <canvas id="canvasGW" width="500" height="500" style="cursor:pointer;" onclick="checkDetectorClick(event, 2)"></canvas>
+                <div class="controls">
+                    <button class="btn" id="gwModeBtn" onclick="toggleGWMode()" style="background-color: #ec4899;">Gravitációs hullám: BE</button>
+                </div>
+                
+                <div class="fringe-wrapper">
+                    <span class="fringe-label">📡 DETEKCIÓS INTERFERENCIA-MINTÁZAT:</span>
+                    <div id="fringeSignal" class="fringe-preview"></div>
+                </div>
+                <div class="det-btn-hint" onclick="switchPage(3)">💡 Kattints a fotodetektorra a fázis-kioltás megtekintéséhez!</div>
+            </div>
+            <div class="content-container">
+                <h1>A téridő megnyúlása</h1>
+                <p>Amikor egy gravitációs hullám (pl. két fekete lyuk összeolvadásából) áthalad a Földön, **maga a tér nyúlik meg és húzódik össze** egymásra merőleges irányokban.</p>
+                
+                <p>Ezáltal az interferométer egyik karja kissé meghosszabbodik (\(L + \Delta L\)), miközben a másik karja lerövidül (\(L - \Delta L\)). A hosszváltozás elképesztően parányi:</p>
+                <div class="formula">ΔL ≈ 10⁻¹⁸ m (a proton méretének ezredrésze!)</div>
+                
+                <p>Mivel a karok hossza aszimmetrikussá válik, a két lézersugár már nem egyszerre ér vissza. Az így fellépő fáziskülönbség miatt az **interferenciacsíkok vibrálni kezdenek** a fotodetektoron. Ebből a fluktuációból közvetlenül rekonstruálható a kozmikus esemény.</p>
+                
+                <h3 style="margin-bottom: 0.5rem; color: #06b6d4;">A felfedezés mérföldköve</h3>
+                <p>A LIGO 2015-ben detektált először közvetlenül gravitációs hullámokat (GW150914), amiért 2017-ben fizikai Nobel-díjat adományoztak. Ez egy teljesen új ablakot nyitott az Univerzum titkaira.</p>
+            </div>
+        </section>
+
+        <!-- 3. OLDAL: MIKROSZKOPIKUS INTERFERENCIA -->
+        <section id="page3" class="page">
+            <div class="visual-container">
+                <canvas id="canvasWaves" width="500" height="400"></canvas>
+                <div class="controls">
+                    <button class="btn" id="waveSimBtn" onclick="toggleWaveDistortion()" style="background-color: #06b6d4;">Téridő torzítás szimulálása</button>
+                </div>
+            </div>
+            <div class="content-container">
+                <h1>Fázisok szuperpozíciója</h1>
+                <p>Ez a nézet megmutatja, hogyan alakul át a karok hosszváltozása mérhető elektromos jellé a fotodetektor felületén.</p>
+                
+                <div class="badge-list">
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #ef4444; color: #ef4444;"></div>
+                        <div><strong>1. Karból jövő fényhullám:</strong> Az észak-déli irányú csőből visszaérkező lézersugár optikai fázisa.</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #3b82f6; color: #3b82f6;"></div>
+                        <div><strong>2. Karból jövő fényhullám:</strong> A kelet-nyugati csőből visszaérkező lézersugár optikai fázisa.</div>
+                    </div>
+                    <div class="badge-item">
+                        <div class="badge-color" style="background-color: #eab308; color: #eab308;"></div>
+                        <div><strong>Eredő hullám (Detektált intenzitás):</strong> A két fényhullám összege.</div>
+                    </div>
+                </div>
+
+                <p style="margin-top: 1.5rem;">
+                    <strong>Sötét alapbeállítás (Destruktív interferencia):</strong> A LIGO-t szándékosan úgy hangolják, hogy hullám hiányában a két fénysugár **pontosan ellentétes fázisban (180°)** találkozzon. Ekkor a hullámhegy kioltja a hullámvölgyet, az eredő jel nulla, a detektor sötét.
+                </p>
+                <p>
+                    <strong>Hullám érkezésekor:</strong> Amint a gravitációs hullám elhangolja a karok hosszát, a tökéletes kioltás megszűnik. A hullámok kimozdulnak az ellentétes fázisból, az eredő hullám azonnal megváltozik, és fénycsillanásként mérhetővé válik.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Oldalnavigáció
+        function switchPage(pageNum) {
+            document.getElementById('page1').classList.remove('active');
+            document.getElementById('page2').classList.remove('active');
+            document.getElementById('page3').classList.remove('active');
+            document.getElementById('nav-p1').classList.remove('active');
+            document.getElementById('nav-p2').classList.remove('active');
+            document.getElementById('nav-p3').classList.remove('active');
+
+            document.getElementById('page' + pageNum).classList.add('active');
+            document.getElementById('nav-p' + pageNum).classList.add('active');
+        }
+
+        // Kattintásérzékelő a fotodetektorhoz a koordináták alapján
+        function checkDetectorClick(event, pageFrom) {
+            const canvas = pageFrom === 1 ? document.getElementById('canvasSetup') : document.getElementById('canvasGW');
+            const rect = canvas.getBoundingClientRect();
+            const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+            
+            // A detektor koordinátái: cx=250, cy=230, len=150 -> x kb 235-265, y kb 380-410
+            if (x >= 230 && x <= 270 && y >= 360 && y <= 420) {
+                if (pageFrom === 2 && gwActive) {
+                    waveDistortionActive = true;
+                    document.getElementById('waveSimBtn').innerText = "Téridő torzítás: BE";
+                    document.getElementById('waveSimBtn').style.backgroundColor = "#ec4899";
+                } else if (pageFrom === 2 && !gwActive) {
+                    waveDistortionActive = false;
+                    document.getElementById('waveSimBtn').innerText = "Téridő torzítás szimulálása";
+                    document.getElementById('waveSimBtn').style.backgroundColor = "#06b6d4";
+                }
+                switchPage(3);
+            }
+        }
+
+        // Segédfüggvény kör rajzolásához
+        function drawLaserDot(ctx, x, y, color, size=6) {
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 10;
+            ctx.beginPath(); 
+            ctx.arc(x, y, size, 0, Math.PI * 2); 
+            ctx.fill();
+            ctx.shadowBlur = 0; // reset
+        }
+
+        // --- 1. OLDAL RENDELÉSE: ALAP SETUP ---
+        const canvas1 = document.getElementById('canvasSetup');
+        const ctx1 = canvas1.getContext('2d');
+        let pulseActive = true;
+        let pulseTime = 0;
+
+        function togglePulse() { pulseActive = !pulseActive; }
+
+        function drawSetup() {
+            ctx1.clearRect(0, 0, 500, 500);
+            const cx = 250, cy = 230, len = 150;
+
+            // Lézerforrás (Cyan csík/doboz)
+            ctx1.fillStyle = '#06b6d4'; ctx1.fillRect(50, cy - 12, 30, 24);
+            ctx1.fillStyle = '#ffffff'; ctx1.font = 'bold 12px sans-serif'; ctx1.fillText('Lézer', 48, cy - 20);
+
+            // Végtükör 1 (Fent)
+            ctx1.fillStyle = '#64748b'; ctx1.fillRect(cx - 25, cy - len - 6, 50, 6); 
+            ctx1.fillStyle = '#94a3b8'; ctx1.fillText('Végtükör (T1)', cx - 35, cy - len - 14);
+
+            // Végtükör 2 (Jobbra)
+            ctx1.fillStyle = '#64748b'; ctx1.fillRect(cx + len, cy - 25, 6, 50); 
+            ctx1.fillStyle = '#94a3b8'; ctx1.fillText('Végtükör (T2)', cx + len + 12, cy + 4);
+
+            // Fotodetektor (Lent)
+            ctx1.fillStyle = '#10b981'; ctx1.fillRect(cx - 15, cy + len, 30, 20); 
+            ctx1.fillStyle = '#ffffff'; ctx1.fillText('Fotodetektor', cx - 32, cy + len + 35);
+
+            // Nyalábosztó középen (45 fokos lila átlós téglalap)
+            ctx1.save(); ctx1.translate(cx, cy); ctx1.rotate(Math.PI / 4); ctx1.fillStyle = '#a855f7'; ctx1.fillRect(-25, -2, 50, 4); ctx1.restore();
+            ctx1.fillStyle = '#94a3b8'; ctx1.fillText('Nyalábosztó', cx + 15, cy - 15);
+
+            if (pulseActive) {
+                pulseTime += 2.5;
+                if (pulseTime > 470) pulseTime = 0;
+            }
+
+            // Fix optikai utak kirajzolása halványan
+            ctx1.lineWidth = 1.5; ctx1.strokeStyle = 'rgba(6, 182, 212, 0.15)';
+            ctx1.beginPath(); ctx1.moveTo(80, cy); ctx1.lineTo(cx, cy); ctx1.lineTo(cx, cy-len); ctx1.moveTo(cx, cy); ctx1.lineTo(cx+len, cy); ctx1.moveTo(cx, cy); ctx1.lineTo(cx, cy+len); ctx1.stroke();
+
+            // Sugárvezetési animáció fázisai
+            let t = pulseTime;
+            if (t < 170) {
+                // Kilép a lézerből, tart a nyalábosztó felé
+                drawLaserDot(ctx1, 80 + t, cy, '#06b6d4');
+            } else {
+                let tKar = t - 170; // Karokon belüli relatív futási idő (max 300)
+                if (tKar < 150) {
+                    // Sugarak haladnak előre a karokban a tükrök felé
+                    drawLaserDot(ctx1, cx, cy - tKar, '#ef4444'); // Kar 1 (Fent)
+                    drawLaserDot(ctx1, cx + tKar, cy, '#3b82f6'); // Kar 2 (Jobbra)
+                } else if (tKar < 300) {
+                    // Sugarak visszaverődnek és tartanak vissza a középpontba
+                    drawLaserDot(ctx1, cx, (cy - len) + (tKar - 150), '#ef4444');
+                    drawLaserDot(ctx1, (cx + len) - (tKar - 150), cy, '#3b82f6');
+                } else {
+                    // Sugarak egyesülnek és lefutnak a detektorig
+                    let tDet = tKar - 200;
+                    drawLaserDot(ctx1, cx, cy + tDet, '#ef4444');
+                    drawLaserDot(ctx1, cx, cy + tDet, '#3b82f6');
+                }
+            }
+            requestAnimationFrame(drawSetup);
+        }
+
+        // --- 2. OLDAL RENDELÉSE: GRAVITÁCIÓS HULLÁM SZIMULÁCIÓ ---
+        const canvas2 = document.getElementById('canvasGW');
+        const ctx2 = canvas2.getContext('2d');
+        const fringeSignal = document.getElementById('fringeSignal');
+
+        let gwActive = true;
+        let gwTime = 0;
+
+        function toggleGWMode() {
+            gwActive = !gwActive;
+            const btn = document.getElementById('gwModeBtn');
+            if (gwActive) {
+                btn.innerText = "Gravitációs hullám: BE";
+                btn.style.backgroundColor = "#ec4899";
+            } else {
+                btn.innerText = "Gravitációs hullám: KI";
+                btn.style.backgroundColor = "#64748b";
+            }
+        }
+
+        function drawGWPage() {
+            ctx2.clearRect(0, 0, 500, 500);
+            const cx = 250, cy = 230;
+            let len = 150;
+
+            gwTime += 0.05;
+
+            // Gravitációs hullám hatása: az egyik kar megnyúlik, a másik összehúzódik szinuszosan
+            let dL = 0;
+            if (gwActive) {
+                dL = Math.sin(gwTime * 2) * 22; // Dinamikusan felnagyított téridő-torzulás
+                
+                // Háttér térrács torzulásának vizualizálása halvány hullámvonalakkal
+                ctx2.strokeStyle = 'rgba(236, 72, 153, 0.08)';
+                ctx2.lineWidth = 1;
+                for(let i = 20; i < 500; i += 30) {
+                    ctx2.beginPath();
+                    ctx2.arc(cx, cy, Math.abs((i + gwTime*15)%450), 0, Math.PI*2);
+                    ctx2.stroke();
+                }
+                ctx2.fillStyle = '#ec4899'; ctx2.font = 'bold 12px sans-serif';
+                ctx2.fillText('Áthaladó Gravitációs Hullám (h) 〰', 20, 30);
+            }
+
+            let len1 = len - dL; // Függőleges kar aktuális hossza
+            let len2 = len + dL; // Vízszintes kar aktuális hossza
+
+            // Alkatrészek kirajzolása a dinamikus hosszak szerint
+            // Fix Forrás és Detektor
+            ctx2.fillStyle = '#06b6d4'; ctx2.fillRect(50, cy - 12, 30, 24);
+            ctx2.fillStyle = '#10b981'; ctx2.fillRect(cx - 15, cy + len, 30, 20); // Detektor pozíciója fix
+            ctx2.fillStyle = '#ffffff'; ctx2.font = 'bold 11px sans-serif'; ctx2.fillText('Fotodetektor', cx - 32, cy + len + 35);
+
+            // Dinamikusan mozgó végtükrök (a tér megnyúlása miatt)
+            ctx2.fillStyle = '#64748b'; 
+            ctx2.fillRect(cx - 25, cy - len1 - 6, 50, 6); // T1 mozgása
+            ctx2.fillRect(cx + len2, cy - 25, 6, 50); // T2 mozgása
+
+            // Nyalábosztó középen
+            ctx2.save(); ctx2.translate(cx, cy); ctx2.rotate(Math.PI / 4); ctx2.fillStyle = '#a855f7'; ctx2.fillRect(-25, -2, 50, 4); ctx2.restore();
+
+            // Karvonalak kirajzolása
+            ctx2.lineWidth = 2; ctx2.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx2.beginPath(); ctx2.moveTo(cx, cy); ctx2.lineTo(cx, cy - len1); ctx2.moveTo(cx, cy); ctx2.lineTo(cx + len2, cy); ctx2.stroke();
+
+            // Fénygolyók harmonikus mozgása
+            let basePulse = (Math.sin(gwTime * 2.5) + 1) / 2; // 0 és 1 között oda-vissza a karokon
+            
+            // Fotonpozíciók leképezése a dinamikus hosszakra
+            let posRed = basePulse * (len1 + 40);   // Karhossz + út a detektorig
+            let posBlue = basePulse * (len2 + 40);
+
+            // Függőleges ág (Piros foton)
+            if (posRed <= len1) {
+                drawLaserDot(ctx2, cx, cy - posRed, '#ef4444'); // Odafelé halad
+            } else if (posRed > len1 && posRed < len1 + 40) {
+                drawLaserDot(ctx2, cx, cy + (posRed - len1), '#ef4444'); // Visszaérkezett, tart lefelé
+            }
+
+            // Vízszintes ág (Kék foton - aszinkron a téreltolódás miatt!)
+            if (posBlue <= len2) {
+                drawLaserDot(ctx2, cx + posBlue, cy, '#3b82f6');
+            } else if (posBlue > len2 && posBlue < len2 + 40) {
+                drawLaserDot(ctx2, cx, cy + (posBlue - len2), '#3b82f6');
+            }
+
+            // Interferencia sáv vezérlése (Csak ha van hullám, akkor vibrál drámaian)
+            if (gwActive) {
+                let fringeShift = Math.sin(gwTime * 4) * 75; // Felnagyított csík-fluktuáció
+                fringeSignal.style.backgroundPosition = `${fringeShift}px 0px`;
+            } else {
+                fringeSignal.style.backgroundPosition = `0px 0px`; // Sötét kioltási alaphelyzet
+            }
+
+            requestAnimationFrame(drawGWPage);
+        }
+
+        // --- 3. OLDAL RENDELÉSE: HULLÁM-INTERFERENCIA ---
+        const canvas3 = document.getElementById('canvasWaves');
+        const ctx3 = canvas3.getContext('2d');
+        let waveTime = 0;
+        let waveDistortionActive = false;
+
+        function toggleWaveDistortion() {
+            waveDistortionActive = !waveDistortionActive;
+            const btn = document.getElementById('waveSimBtn');
+            if (waveDistortionActive) {
+                btn.innerText = "Téridő torzítás: BE";
+                btn.style.backgroundColor = "#ec4899";
+            } else {
+                btn.innerText = "Téridő torzítás szimulálása";
+                btn.style.backgroundColor = "#06b6d4";
+            }
+        }
+
+        function drawWavesPage() {
+            ctx3.clearRect(0, 0, 500, 400);
+            waveTime += 0.05;
+
+            // Fáziseltolódás mértéke (0 = tökéletes ellentétes fázis / kioltás, PI = azonos fázis / erősítés)
+            let phaseShift = Math.PI; // Alapértelmezett 180 fokos kioltás a LIGO hangolásnak megfelelően
+            if (waveDistortionActive) {
+                // Gravitációs hullám hatására a fáziskülönbség modulálódik szinuszosan
+                phaseShift = Math.PI + Math.sin(waveTime * 2) * 1.2; 
+            }
+
+            // Szinusz hullámok paraméterei
+            let startX = 50;
+            let endX = 450;
+            let y1 = 80;  // 1. hullám tengely
+            let y2 = 180; // 2. hullám tengely
+            let y3 = 300; // Eredő hullám tengely
+            let amp = 25; // Amplitúdó
+
+            // 1. Hullám rajzolása (Piros - 1. Kar)
+            ctx3.strokeStyle = '#ef4444'; ctx3.lineWidth = 2.5; ctx3.beginPath();
+            for (let x = startX; x <= endX; x++) {
+                let y = y1 + Math.sin((x - startX) * 0.05 - waveTime * 3) * amp;
+                if (x === startX) ctx3.moveTo(x, y); else ctx3.lineTo(x, y);
+            }
+            ctx3.stroke();
+            ctx3.fillStyle = '#ffffff'; ctx3.font = '11px sans-serif'; ctx3.fillText('1. Karból érkező fényhullám', startX, y1 - 35);
+
+            // 2. Hullám rajzolása (Kék - 2. Kar, fáziseltolással)
+            ctx3.strokeStyle = '#3b82f6'; ctx3.lineWidth = 2.5; ctx3.beginPath();
+            for (let x = startX; x <= endX; x++) {
+                let y = y2 + Math.sin((x - startX) * 0.05 - waveTime * 3 + phaseShift) * amp;
+                if (x === startX) ctx3.moveTo(x, y); else ctx3.lineTo(x, y);
+            }
+            ctx3.stroke();
+            ctx3.fillText('2. Karból érkező fényhullám (Fáziseltolódással)', startX, y2 - 35);
+
+            // Eredő szuperponált hullám rajzolása (Sárga/Zöld az állapottól függően)
+            let isCanceled = Math.abs(Math.sin(phaseShift / 2)) < 0.2; // közel van-e a kioltáshoz
+            ctx3.strokeStyle = waveDistortionActive ? '#eab308' : '#10b981'; 
+            ctx3.lineWidth = 3; 
+            ctx3.beginPath();
+            
+            for (let x = startX; x <= endX; x++) {
+                // Összeadjuk a két szinusz értéket
+                let sin1 = Math.sin((x - startX) * 0.05 - waveTime * 3) * amp;
+                let sin2 = Math.sin((x - startX) * 0.05 - waveTime * 3 + phaseShift) * amp;
+                let y = y3 + sin1 + sin2;
+                if (x === startX) ctx3.moveTo(x, y); else ctx3.lineTo(x, y);
+            }
+            ctx3.stroke();
+
+            // Dinamikus státusz szöveg
+            ctx3.fillStyle = '#ffffff'; ctx3.font = 'bold 12px sans-serif';
+            if (waveDistortionActive) {
+                ctx3.fillStyle = '#ec4899';
+                ctx3.fillText('EREDŐ JEL: Dinamikus fluktuáció (GRAVITÁCIÓS JEL ÉSZLELVE! 📡)', startX, y3 - 45);
+            } else {
+                ctx3.fillStyle = '#10b981';
+                ctx3.fillText('EREDŐ JEL: Tökéletes destruktív kioltás (Alapállapot - Sötétség 🟢)', startX, y3 - 45);
+            }
+
+            requestAnimationFrame(drawWavesPage);
+        }
+
+        // Animációk elindítása a betöltéskor
+        drawSetup();
+        drawGWPage();
+        drawWavesPage();
+    </script>
+</body>
+</html>
