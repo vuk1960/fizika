@@ -50,7 +50,7 @@
     </div>
 
     <div class="nav-menu">
-        <button class="nav-btn active" id="btn-cat1" onclick="switchCat('cat1')">1. Szint (Víz + Alumínium)</button>
+        <button class="nav-btn active" id="btn-cat1" onclick="switchCat('cat1')">1. Szint (Víz + Tea(Víz))</button>
         <button class="nav-btn" id="btn-cat2" onclick="switchCat('cat2')">2. Szint (Víz + Réz)</button>
         <button class="nav-btn" id="btn-cat3" onclick="switchCat('cat3')">3. Szint (Víz + Vas)</button>
         <button class="nav-btn" id="btn-cat4" onclick="switchCat('cat4')">4. Szint (Véletlenszerű)</button>
@@ -86,17 +86,17 @@
 
     const c_water = 4.2;
     const materials = {
-        'alumínium': { c: 0.9 },
+        'tea': { c: 4.2 },
         'réz': { c: 0.39 },
         'vas': { c: 0.46 },
-        'ólom': { c: 0.13 }
+        'ólom': { c: 4.18 }
     };
 
     const theoryData = {
-        cat1: "<b>Különböző anyagok hőkeverése:</b><br>Mivel nincs halmazállapot-változás, a leadott hőmennyiség teljesen megegyezik a felvett hőmennyiséggel: <i>Q_felvett = Q_leadott</i>.<br>Képlet: <i>c₁ · m₁ · (T_k - T₁) = c₂ · m₂ · (T₂ - T_k)</i>.<br>Alumínium fajhője: 0,90 kJ/(kg·°C).",
+        cat1: "<b>Különböző anyagok hőkeverése:</b><br>Mivel nincs halmazállapot-változás, a leadott hőmennyiség teljesen megegyezik a felvett hőmennyiséggel: <i>Q_felvett = Q_leadott</i>.<br>Képlet: <i>c₁ · m₁ · (T_k - T₁) = c₂ · m₂ · (T₂ - T_k)</i>.<br>A tea (víz)Alumínium fajhője: 4,2 kJ/(kg·°C).",
         cat2: "<b>Keverési egyenlet réz esetén:</b><br>A felírt energiamérleg ugyanaz, csak a réz egyedi fajhőjét alkalmazzuk.<br>Réz fajhője: 0,39 kJ/(kg·°C). Víz fajhője: 4,2 kJ/(kg·°C).",
         cat3: "<b>Vas és víz hőegyensúlya:</b><br>Az egyenlet átrendezése a zárójelek felbontása után: <i>c₁m₁T_k - c₁m₁T₁ = c₂m₂T₂ - c₂m₂T_k</i>, amiből a közös hőmérséklet kifejezve:<br><i>T_k = (c₁m₁T₁ + c₂m₂T₂) / (c₁m₁ + c₂m₂)</i>.<br>Vas fajhője: 0,46 kJ/(kg·°C).",
-        cat4: "<b>Véletlenszerű szilárd fém test:</b><br>A rendszer véletlenszerűen választ alumínium, vas, réz vagy ólom közül. A fizikai elv változatlan: <i>Q_fel = Q_le</i>."
+        cat4: "<b>Véletlenszerű szilárd fém test:</b><br>A rendszer véletlenszerűen választ tea(víz), vas, réz vagy víz közül. A fizikai elv változatlan: <i>Q_fel = Q_le</i>."
     };
 
     function fmt(x, d = 1) { return Number(x).toLocaleString('hu-HU', { minimumFractionDigits: 0, maximumFractionDigits: d }); }
@@ -148,7 +148,7 @@
         m_w = Math.round(m_w * 10) / 10;
         let t_w = Math.floor(Math.random() * 15) + 15;       
 
-        let matName = 'alumínium';
+        let matName = 'tea';
         if (currentCat === 'cat2') matName = 'réz';
         else if (currentCat === 'cat3') matName = 'vas';
         else if (currentCat === 'cat4') {
@@ -187,7 +187,7 @@
 
     function renderUI() {
         let d = currentTaskData;
-        document.getElementById('exercise-text').innerHTML = `Egy kaloriméterben lévő <b>${fmt(d.m_w)} kg</b> tömegű, <b>${d.t_w} °C</b> hőmérsékletű vízbe belehelyezünk egy <b>${fmt(d.m_m)} kg</b> tömegű, <b>${d.t_m} °C</b>-os <b>${d.matName}</b> tömböt. <br><small>Fajhők: c_víz = 4,2 kJ/(kg·°C); c_${d.matName} = ${d.c_m} kJ/(kg·°C). Halmazállapot-változás nem történik!</small>`;
+        document.getElementById('exercise-text').innerHTML = `Egy kaloriméterben lévő <b>${fmt(d.m_w)} kg</b> tömegű, <b>${d.t_w} °C</b> hőmérsékletű vízbe belehelyezünk vagy öntünk <b>${fmt(d.m_m)} kg</b> tömegű, <b>${d.t_m} °C</b>-os <b>${d.matName}</b> tömböt. <br><small>Fajhők: c_víz = 4,2 kJ/(kg·°C); c_${d.matName} = ${d.c_m} kJ/(kg·°C). Halmazállapot-változás nem történik!</small>`;
 
         let html = `
             <div class="input-row">
@@ -195,7 +195,7 @@
                 <span><input type="text" id="input-qfel" placeholder="kJ-ban"> kJ</span>
             </div>
             <div class="input-row">
-                <label>2. A fém által leadott hő mennyisége (Q_lead) [kJ]:</label>
+                <label>2. A fém v által leadott hő mennyisége (Q_lead) [kJ]:</label>
                 <span><input type="text" id="input-qled" placeholder="kJ-ban"> kJ</span>
             </div>
             <div class="input-row" style="border-top: 2px solid #00796b; padding-top: 10px; font-weight: bold;">
