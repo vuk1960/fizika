@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mozgási Indukció: Lorentz-erő és Feszültség Levezetés</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: #222; margin-bottom: 5px; text-align: center; }
+        h2 { color: #666; font-size: 1.1rem; margin-top: 0; margin-bottom: 20px; text-align: center; font-weight: normal; }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .control-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            flex: 1;
+            min-width: 320px;
+            max-width: 380px;
+        }
+        .simulation-panel {
+            background: #1e2530;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            border-radius: 12px;
+        }
+        .control-group {
+            margin-bottom: 18px;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .btn-row {
+            display: flex;
+            gap: 8px;
+        }
+        button {
+            padding: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-start { background-color: #198754; color: white; flex: 1; }
+        .btn-start:hover { background-color: #157347; }
+        .btn-reset { background-color: #6c757d; color: white; flex: 1; }
+        .btn-reset:hover { background-color: #5c636a; }
+        .btn-calc { background-color: #0d6efd; color: white; width: 100%; margin-top: 4px; }
+        .btn-calc:hover { background-color: #0b5ed7; }
+        
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #444;
+        }
+        input[type="range"], select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        .value-display {
+            font-weight: normal;
+            color: #0d6efd;
+            float: right;
+        }
+        .math-panel {
+            display: none; /* Kezdetben rejtve van, a gomb nyitja meg */
+            background: #0f141c;
+            color: #e0e6ed;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 1150px;
+            box-sizing: border-box;
+            margin-top: 10px;
+            border-left: 6px solid #ffcc00;
+        }
+        .math-title { color: #ffcc00; font-size: 1.2rem; margin-top: 0; margin-bottom: 15px; font-weight: bold; }
+        .math-step { margin-bottom: 12px; line-height: 1.5; font-size: 1.05rem; }
+        .formula { background: rgba(255,255,255,0.06); padding: 6px 12px; border-radius: 4px; font-family: 'Courier New', monospace; font-weight: bold; color: #00ffcc; display: inline-block; margin: 4px 0; }
+        .result-box { color: #ffcc00; font-size: 1.15rem; font-weight: bold; border-top: 1px dashed #444; padding-top: 10px; margin-top: 15px; }
+        
+        .legend {
+            margin-top: 15px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.8em;
+        }
+        .legend-item { margin: 4px 0; display: flex; align-items: center; gap: 8px; }
+        .color-box { width: 10px; height: 10px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <h1>Mozgási Indukció Szimuláció</h1>
+    <h2>Egyensúlyi állapot és a feszültség matematikai levezetése</h2>
+    
+    <div class="container">
+        <!-- Beállítások panel -->
+        <div class="control-panel">
+            <h3>Vezérlőpult</h3>
+            
+            <div class="btn-group">
+                <div class="btn-row">
+                    <button class="btn-start" id="startBtn">Indítás (Start)</button>
+                    <button class="btn-reset" id="resetBtn">Alaphelyzet</button>
+                </div>
+                <button class="btn-calc" id="calcBtn">Matematikai Levezetés ↓</button>
+            </div>
+
+            <div class="control-group">
+                <label for="velocitySlider">Rúd sebessége (v): <span id="valV" class="value-display">Áll (0)</span></label>
+                <input type="range" id="velocitySlider" min="-4" max="4" step="1" value="0">
+            </div>
+
+            <div class="control-group">
+                <label for="magneticB">Mágneses tér (B) iránya:</label>
+                <select id="magneticB">
+                    <option value="IN">Beeső (X) - Befelé mutat</option>
+                    <option value="OUT">Kiáramló (•) - Kifelé mutat</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="fieldStrength">Mágneses indukció erőssége: <span id="valB" class="value-display">Közepes</span></label>
+                <input type="range" id="fieldStrength" min="0.5" max="2.0" step="0.5" value="1.0">
+            </div>
+            
+            <div class="legend">
+                <strong>Jelmagyarázat:</strong>
+                <div class="legend-item"><div class="color-box" style="background: #00f3ff;"></div> Szabad elektron (<span style="color:#00f3ff;">e⁻</span>)</div>
+                <div class="legend-item"><div class="color-box" style="background: #ff0055;"></div> Lorentz-erő (<span style="color:#ff0055;">F_L</span>)</div>
+                <div class="legend-item"><div class="color-box" style="background: #00ff66;"></div> Sebességvektor (<span style="color:#00ff66;">v</span>)</div>
+                <div class="legend-item"><div class="color-box" style="background: #ffcc00;"></div> Elektromos tér (<span style="color:#ffcc00;">E</span>)</div>
+            </div>
+        </div>
+
+        <!-- Grafikus panel -->
+        <div class="simulation-panel">
+            <canvas id="simCanvas" width="650" height="420"></canvas>
+        </div>
+        
+        <!-- Dinamikus matematikai levezetés panel -->
+        <div class="math-panel" id="mathPanel">
+            <div class="math-title">A mozgási indukció feszültségének levezetése:</div>
+            
+            <div class="math-step">
+                1. A mágneses térben mozgó rúd szabad elektronjaira <strong>Lorentz-erő</strong> hat, ami elmozdítja őket a rúd egyik vége felé:<br>
+                <span class="formula">F_L = q · v · B</span>
+            </div>
+            
+            <div class="math-step">
+                2. A töltések szétválása miatt a rúd végei között egy belső <strong>homogén elektromos tér (E)</strong> épül fel. Ez az elektromos tér a Lorentz-erővel <strong>ellentétes irányú</strong> elektromos erőt fejt ki az elektronokra:<br>
+                <span class="formula">F_e = q · E</span>
+            </div>
+            
+            <div class="math-step">
+                3. A töltésáramlás addig folytatódik, amíg a dinamikus egyensúly be nem áll, azaz a két erő **pontosan egyenlővé** nem válik:<br>
+                <span class="formula">F_e = F_L  ⇒  q · E = q · v · B  ⇒  E = v · B</span>
+            </div>
+            
+            <div class="math-step">
+                4. Mivel homogén elektromos térben a feszültség <span class="formula">U = E · l</span> (ahol <span style="color:#00ffcc">l</span> a rúd hossza), az <span style="color:#00ffcc">E</span> térerősséget behelyettesítve megkapjuk a mozgási feszültség képletét:<br>
+                <span class="formula" style="font-size: 1.15rem; color: #ffcc00; border: 1px solid #ffcc00;">U = v · B · l</span>
+            </div>
+            
+            <div class="result-box" id="mathResult">
+                Behelyettesítés a szimuláció aktuális értékeivel: ...
+            </div>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Felületi elemek elérése
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const calcBtn = document.getElementById('calcBtn');
+        const velocitySlider = document.getElementById('velocitySlider');
+        const selectB = document.getElementById('magneticB');
+        const inputStrength = document.getElementById('fieldStrength');
+        const valV = document.getElementById('valV');
+        const valB = document.getElementById('valB');
+        const mathPanel = document.getElementById('mathPanel');
+        const mathResult = document.getElementById('mathResult');
+
+        // Fizikai állapotok és beállítások
+        let B_direction = selectB.value; 
+        let B_strength = parseFloat(inputStrength.value);
+        let setSpeedX = parseFloat(velocitySlider.value); 
+        let currentSpeedX = 0;                            
+        let isRunning = false;                            
+
+        // A fémrúd geometriája
+        let rod = {
+            x: 312, 
+            y: 70,
+            width: 25,
+            height: 270 // Fix hossz a stabil l számításhoz
+        };
+
+        // Kiemelt elektron pozíciója a rúdon belül
+        let electron = {
+            relY: 0,      
+            targetRelY: 0 
+        };
+
+        // Csúszkák és gombok eseménykezelői
+        velocitySlider.addEventListener('input', (e) => {
+            setSpeedX = parseFloat(e.target.value);
+            if (setSpeedX === 0) {
+                valV.textContent = "Áll (0)";
+            } else if (setSpeedX > 0) {
+                valV.textContent = `Jobbra (${setSpeedX})`;
+            } else {
+                valV.textContent = `Balra (${Math.abs(setSpeedX)})`;
+            }
+            if (isRunning) currentSpeedX = setSpeedX;
+            updateMathOutput(); // Élő matematikai frissítés változtatáskor
+        });
+
+        const strengthTexts = { "0.5": "Gyenge", "1.0": "Közepes", "1.5": "Erős", "2.0": "Nagyon erős" };
+        inputStrength.addEventListener('input', (e) => {
+            B_strength = parseFloat(e.target.value);
+            valB.textContent = strengthTexts[e.target.value];
+            updateMathOutput();
+        });
+        
+        selectB.addEventListener('change', (e) => { 
+            B_direction = e.target.value; 
+            updateMathOutput();
+        });
+
+        // Matematikai levezetés panel láthatósági gombja
+        calcBtn.addEventListener('click', () => {
+            if (mathPanel.style.display === "block") {
+                mathPanel.style.display = "none";
+                calcBtn.textContent = "Matematikai Levezetés ↓";
+            } else {
+                mathPanel.style.display = "block";
+                calcBtn.textContent = "Levezetés elrejtése ↑";
+                updateMathOutput();
+                // Finom görgetés a panelhez, hogy a diákok azonnal lássák
+                mathPanel.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+
+        // Start / Stop gomb logikája
+        startBtn.addEventListener('click', () => {
+            isRunning = !isRunning;
+            if (isRunning) {
+                startBtn.textContent = "Leállítás (Stop)";
+                startBtn.style.backgroundColor = "#dc3545"; 
+                currentSpeedX = setSpeedX;
+            } else {
+                startBtn.textContent = "Indítás (Start)";
+                startBtn.style.backgroundColor = "#198754"; 
+                currentSpeedX = 0;
+            }
+        });
+
+        // Alaphelyzet gomb logikája
+        resetBtn.addEventListener('click', () => {
+            isRunning = false;
+            startBtn.textContent = "Indítás (Start)";
+            startBtn.style.backgroundColor = "#198754";
+            velocitySlider.value = 0;
+            setSpeedX = 0;
+            currentSpeedX = 0;
+            valV.textContent = "Áll (0)";
+            rod.x = 312;
+            electron.relY = 0;
+            electron.targetRelY = 0;
+            updateMathOutput();
+        });
+        // A levezetés panel alján található behelyettesítés dinamikus frissítése
+        function updateMathOutput() {
+            let speedForPhysics = isRunning ? currentSpeedX : setSpeedX;
+            let v_abs = Math.abs(speedForPhysics);
+            let b_val = B_strength;
+            let l_val = (rod.height / 100).toFixed(2); // A rúd hossza méterben kifejezve szemléltetésként
+            let u_val = (v_abs * b_val * l_val).toFixed(2);
+
+            if (v_abs === 0) {
+                mathResult.innerHTML = `<strong>Aktuális számítás a szimuláció értékeivel:</strong><br>` +
+                    `A rúd jelenleg áll (v = 0 m/s), így nincs Lorentz-erő, nincs töltésszétválás: <span style="color:#ffcc00">U = 0.00 V</span>`;
+            } else {
+                let directionText = (B_direction === "IN") ? "befelé (X)" : "kifelé (•)";
+                mathResult.innerHTML = `<strong>Aktuális számítás a szimuláció értékeivel:</strong><br>` +
+                    `• Sebesség abszolút értéke (|v|): <span style="color:#00ff66">${v_abs} m/s</span><br>` +
+                    `• Mágneses indukció (B): <span style="color:#00ffcc">${b_val} T</span> (${directionText} irány)<br>` +
+                    `• Rúd hossza (l): <span style="color:#ffffff">${l_val} m</span><br>` +
+                    `• Kialakuló egyensúlyi feszültség:<br>` +
+                    `<span class="formula" style="font-size:1.1rem; color:#ffcc00;">U = ${v_abs} · ${b_val} · ${l_val} = ${u_val} V</span>`;
+            }
+        }
+
+        // Segédfüggvény nyilak rajzolásához
+        function drawArrow(x1, y1, x2, y2, color, lineWidth = 3) {
+            const headLength = 10;
+            const angle = Math.atan2(y2 - y1, x2 - y1);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLength * Math.cos(angle - Math.PI / 6), y2 - headLength * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+        }
+
+        // Fő animációs és fizikai ciklus
+        function updateAndRender() {
+            // 1. POZÍCIÓ FRISSÍTÉSE (Automatikus mozgás és visszafordulás)
+            if (isRunning) {
+                rod.x += currentSpeedX * 0.5; 
+                
+                if (rod.x < 40) {
+                    rod.x = 40;
+                    currentSpeedX = -currentSpeedX;
+                    setSpeedX = currentSpeedX;
+                    velocitySlider.value = setSpeedX;
+                    valV.textContent = `Jobbra (${currentSpeedX})`;
+                    updateMathOutput();
+                } else if (rod.x > canvas.width - rod.width - 40) {
+                    rod.x = canvas.width - rod.width - 40;
+                    currentSpeedX = -currentSpeedX;
+                    setSpeedX = currentSpeedX;
+                    velocitySlider.value = setSpeedX;
+                    valV.textContent = `Balra (${Math.abs(currentSpeedX)})`;
+                    updateMathOutput();
+                }
+            }
+
+            // Fizikai Lorentz-erő számítás
+            let speedForPhysics = isRunning ? currentSpeedX : setSpeedX;
+            let lorentzForce = 0;
+            
+            if (Math.abs(speedForPhysics) > 0.05) {
+                let bDirectionModifier = (B_direction === "IN") ? 1 : -1;
+                lorentzForce = speedForPhysics * B_strength * bDirectionModifier * 3;
+            }
+
+            // Elektron fizikai elmozdulása a rúdon belül az erőnek megfelelően
+            let maxRelY = rod.height / 2 - 20;
+            electron.targetRelY = Math.max(-maxRelY, Math.min(maxRelY, lorentzForce * 15));
+            electron.relY += (electron.targetRelY - electron.relY) * 0.1;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // --- MÁGNESES MEZŐ HÁTTÉR RAJZOLÁSA (Élénk neon) ---
+            ctx.strokeStyle = '#00ffcc';
+            ctx.fillStyle = '#00ffcc';
+            ctx.lineWidth = 2.5;
+            ctx.font = '14px Arial';
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+
+            for (let x = 40; x < canvas.width; x += 50) {
+                for (let y = 40; y < canvas.height; y += 50) {
+                    if (y > 360) continue; 
+                    if (B_direction === "IN") {
+                        ctx.beginPath();
+                        ctx.moveTo(x - 6, y - 6); ctx.lineTo(x + 6, y + 6);
+                        ctx.moveTo(x + 6, y - 6); ctx.lineTo(x - 6, y + 5);
+                        ctx.stroke();
+                    } else {
+                        ctx.beginPath(); ctx.arc(x, y, 5, 0, 2 * Math.PI); ctx.stroke();
+                        ctx.beginPath(); ctx.arc(x, y, 1.5, 0, 2 * Math.PI); ctx.fill();
+                    }
+                }
+            }
+
+            // Felirat az irányról
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'left';
+            ctx.fillText(B_direction === "IN" ? "Mágneses tér (B): BEFELÉ (X)" : "Mágneses tér (B): KIFELÉ (•)", 20, 22);
+
+            // --- RÚD RAJZOLÁSA ---
+            let grad = ctx.createLinearGradient(rod.x, 0, rod.x + rod.width, 0);
+            grad.addColorStop(0, '#7f8c8d'); grad.addColorStop(0.5, '#f5f6fa'); grad.addColorStop(1, '#bdc3c7');
+            ctx.fillStyle = grad; ctx.fillRect(rod.x, rod.y, rod.width, rod.height);
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.strokeRect(rod.x, rod.y, rod.width, rod.height);
+
+            let rodCenterX = rod.x + rod.width / 2;
+            let rodCenterY = rod.y + rod.height / 2;
+
+            // --- SEBESSÉG NYÍL (v) ---
+            if (Math.abs(speedForPhysics) > 0.1) {
+                let speedArrowLength = speedForPhysics * 15;
+                drawArrow(rodCenterX, rodCenterY - 40, rodCenterX + speedArrowLength, rodCenterY - 40, '#00ff66', 4);
+                ctx.fillStyle = '#00ff66'; ctx.font = 'bold 13px Arial';
+                ctx.textAlign = speedForPhysics > 0 ? 'left' : 'right';
+                ctx.fillText(" v", rodCenterX + speedArrowLength + (speedForPhysics > 0 ? 5 : -5), rodCenterY - 40);
+            }
+
+            // --- FESZÜLTSÉG PÓLUSOK ÉS E TÉR ---
+            let upperSign = electron.relY > 10 ? "+" : (electron.relY < -10 ? "-" : "");
+            let lowerSign = electron.relY > 10 ? "-" : (electron.relY < -10 ? "+" : "");
+
+            ctx.font = 'bold 26px Arial'; ctx.textAlign = 'center';
+            if (upperSign !== "") {
+                ctx.fillStyle = upperSign === "+" ? '#ff4d4d' : '#4d4dff'; ctx.fillText(upperSign, rodCenterX, rod.y - 15);
+                ctx.fillStyle = lowerSign === "+" ? '#ff4d4d' : '#4d4dff'; ctx.fillText(lowerSign, rodCenterX, rod.y + rod.height + 25);
+                
+                ctx.font = 'bold 13px Arial'; ctx.fillStyle = '#ffcc00';
+                if (upperSign === "+") {
+                    drawArrow(rod.x - 22, rod.y + 30, rod.x - 22, rod.y + rod.height - 30, '#ffcc00', 2.5);
+                } else {
+                    drawArrow(rod.x - 22, rod.y + rod.height - 30, rod.x - 22, rod.y + 30, '#ffcc00', 2.5);
+                }
+                ctx.fillText("E", rod.x - 34, rodCenterY);
+            }
+
+            // --- ELEKTRON ÉS LORENTZ-ERŐ ---
+            let eX = rodCenterX; let eY = rodCenterY + electron.relY;
+
+            if (Math.abs(lorentzForce) > 0.1) {
+                let forceArrowLength = lorentzForce * 12;
+                drawArrow(eX, eY, eX, eY + forceArrowLength, '#ff0055', 3.5);
+                ctx.fillStyle = '#ff0055'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'left';
+                ctx.fillText(" F_L", eX + 18, eY + forceArrowLength / 2);
+            }
+
+            ctx.beginPath(); ctx.arc(eX, eY, 11, 0, 2 * Math.PI);
+            ctx.fillStyle = '#00f3ff'; ctx.shadowColor = '#00f3ff'; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
+            ctx.fillStyle = '#111'; ctx.font = 'bold 12px Arial'; ctx.textBaseline = 'middle'; ctx.fillText("e⁻", eX, eY);
+
+            // --- PANEL ALUL ---
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.07)'; ctx.fillRect(15, canvas.height - 40, canvas.width - 30, 30);
+            ctx.fillStyle = '#e0e0e0'; ctx.font = '13px Arial'; ctx.textAlign = 'center';
+            
+            let statusText = isRunning ? "Szimuláció fut. Nyomd meg a 'Levezetés' gombot a képletek elemzéséhez!" : "Szimuláció megállítva. A nyilak és értékek a didaktikai magyarázathoz rögzítve maradtak.";
+            ctx.fillText(statusText, canvas.width / 2, canvas.height - 21);
+
+            requestAnimationFrame(updateAndRender);
+        }
+
+        updateAndRender();
+        updateMathOutput();
+    </script>
+</body>
+</html>

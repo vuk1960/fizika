@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generátor Elv: Forgó Rúd és Szinuszos Feszültség</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: #222; margin-bottom: 5px; text-align: center; }
+        h2 { color: #666; font-size: 1.1rem; margin-top: 0; margin-bottom: 20px; text-align: center; font-weight: normal; }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .control-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            flex: 1;
+            min-width: 320px;
+            max-width: 360px;
+        }
+        .simulation-panel {
+            background: #191f28;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            border-radius: 12px;
+        }
+        .control-group {
+            margin-bottom: 18px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-start { background-color: #198754; color: white; }
+        .btn-start:hover { background-color: #157347; }
+        .btn-reset { background-color: #6c757d; color: white; }
+        .btn-reset:hover { background-color: #5c636a; }
+        
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #444;
+        }
+        input[type="range"] {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .value-display {
+            font-weight: normal;
+            color: #0d6efd;
+            float: right;
+        }
+        .explanation-box {
+            margin-top: 15px;
+            background: #e8f4fd;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            color: #1c3d5a;
+            line-height: 1.4;
+            border-left: 5px solid #0d6efd;
+        }
+        .legend {
+            margin-top: 15px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.8em;
+        }
+        .legend-item { margin: 4px 0; display: flex; align-items: center; gap: 8px; }
+        .color-box { width: 10px; height: 10px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <h1>Váltakozó Áram Születése</h1>
+    <h2>Mágneses térben forgó vezető rúd és az élő szinuszdiagram</h2>
+    
+    <div class="container">
+        <!-- Vezérlőpult -->
+        <div class="control-panel">
+            <h3>Vezérlés</h3>
+            
+            <div class="btn-group">
+                <button class="btn-start" id="startBtn">Forgatás (Start)</button>
+                <button class="btn-reset" id="resetBtn">Alaphelyzet</button>
+            </div>
+
+            <div class="control-group">
+                <label for="speedSlider">Forgatási sebesség (ω): <span id="valW" class="value-display">Közepes</span></label>
+                <input type="range" id="speedSlider" min="0.5" max="2.5" step="0.5" value="1.5">
+            </div>
+
+            <div class="control-group">
+                <label for="strengthSlider">Mágneses tér (B): <span id="valB" class="value-display">1.0 T</span></label>
+                <input type="range" id="strengthSlider" min="0.5" max="2.0" step="0.5" value="1.0">
+            </div>
+            
+            <div class="legend">
+                <strong>Színkódok:</strong>
+                <div class="legend-item"><div class="color-box" style="background: #00ff66;"></div> Kerületi sebesség (<span style="color:#00ff66;">v</span>)</div>
+                <div class="legend-item"><div class="color-box" style="background: #ff0055;"></div> Lorentz-erő (<span style="color:#ff0055;">F_L</span>)</div>
+                <div class="legend-item"><div class="color-box" style="background: #ffcc00;"></div> Szinuszos feszültség (<span style="color:#ffcc00;">U</span>)</div>
+            </div>
+
+            <div class="explanation-box">
+                <strong>Didaktikai tipp:</strong> Nyomd meg a **Leállítás** gombot, amikor a rúd függőlegesen vagy vízszintesen áll, így kimerevítve elemezhető a pillanatnyi indukált feszültség értéke!
+            </div>
+        </div>
+
+        <!-- Grafikus panel -->
+        <div class="simulation-panel">
+            <canvas id="simCanvas" width="800" height="420"></canvas>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Felületi elemek elérése
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        const strengthSlider = document.getElementById('strengthSlider');
+        const valW = document.getElementById('valW');
+        const valB = document.getElementById('valB');
+
+        // Fizikai és animációs változók
+        let isRunning = false;
+        let angle = 0; 
+        let omega = parseFloat(speedSlider.value) * 0.02; 
+        let B_strength = parseFloat(strengthSlider.value);
+        
+        // Szinuszos feszültséggörbe pontjainak tárolása (idődiagram)
+        let voltageHistory = [];
+        const maxHistoryPoints = 320; 
+
+        // Középpontok koordinátái a vásznon
+        const rotCenter = { x: 200, y: 210 }; 
+        const graphLeft = 430;                
+        const graphWidth = 330;               
+
+        // Csúszkák eseménykezelői
+        const speedTexts = { "0.5": "Nagyon lassú", "1.0": "Lassú", "1.5": "Közepes", "2.0": "Gyors", "2.5": "Nagyon gyors" };
+        speedSlider.addEventListener('input', (e) => {
+            omega = parseFloat(e.target.value) * 0.02;
+            valW.textContent = speedTexts[e.target.value];
+        });
+
+        strengthSlider.addEventListener('input', (e) => {
+            B_strength = parseFloat(e.target.value);
+            valB.textContent = B_strength.toFixed(1) + " T";
+        });
+
+        // Gombok eseménykezelői
+        startBtn.addEventListener('click', () => {
+            isRunning = !isRunning;
+            if (isRunning) {
+                startBtn.textContent = "Leállítás (Stop)";
+                startBtn.style.backgroundColor = "#dc3545";
+            } else {
+                startBtn.textContent = "Forgatás (Start)";
+                startBtn.style.backgroundColor = "#198754";
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            isRunning = false;
+            startBtn.textContent = "Forgatás (Start)";
+            startBtn.style.backgroundColor = "#198754";
+            angle = 0;
+            voltageHistory = [];
+            speedSlider.value = "1.5";
+            strengthSlider.value = "1.0";
+            omega = 1.5 * 0.02;
+            valW.textContent = "Közepes";
+            valB.textContent = "1.0 T";
+        });
+        // Segédfüggvény nyilak rajzolásához
+        function drawArrow(x1, y1, x2, y2, color, lineWidth = 3) {
+            const headLength = 9;
+            const a = Math.atan2(y2 - y1, x2 - y1);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLength * Math.cos(a - Math.PI / 6), y2 - headLength * Math.sin(a - Math.PI / 6));
+            ctx.lineTo(x2 - headLength * Math.cos(a + Math.PI / 6), y2 - headLength * Math.sin(a + Math.PI / 6));
+            ctx.fill();
+        }
+
+        // Fő animációs és fizikai ciklus
+        function updateAndRender() {
+            // 1. POZÍCIÓ FRISSÍTÉSE ÉS FESZÜLTSÉG SZÁMÍTÁSA
+            if (isRunning) {
+                angle += omega;
+                if (angle > Math.PI * 2) angle -= Math.PI * 2;
+            }
+
+            // U = U_max * sin(alpha)
+            let currentVoltage = Math.sin(angle) * B_strength * 70;
+
+            // JAVÍTOTT ADATKEZELÉS: Mindig tömbként kezeljük a pontokat
+            if (isRunning || voltageHistory.length === 0) {
+                voltageHistory.unshift(currentVoltage);
+                if (voltageHistory.length > maxHistoryPoints) {
+                    voltageHistory.pop();
+                }
+            } else {
+                // Ha áll a forgás, a legfrissebb (index 0) értéket folyamatosan frissítjük a kimerevítéshez
+                voltageHistory[0] = currentVoltage;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // --- A) MÁGNESES MEZŐ HÁTTÉR RAJZOLÁSA ---
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.25)';
+            ctx.lineWidth = 1.5;
+            for (let x = 40; x < 360; x += 40) {
+                for (let y = 50; y < canvas.height - 40; y += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5);
+                    ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5);
+                    ctx.stroke();
+                }
+            }
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'left';
+            ctx.fillText("Mágneses tér (B): BEFELÉ (X)", 20, 25);
+
+            // Pálya segédvonal
+            ctx.strokeStyle = '#4f5d73'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(rotCenter.x, rotCenter.y, 110, 0, 2 * Math.PI); ctx.stroke();
+
+            // Középpont
+            ctx.fillStyle = '#6c757d'; ctx.beginPath(); ctx.arc(rotCenter.x, rotCenter.y, 6, 0, 2 * Math.PI); ctx.fill();
+
+            // --- B) A FORGÓ RÚD RAJZOLÁSA ---
+            let rodLength = 110;
+            let rodEndX = rotCenter.x + rodLength * Math.cos(angle);
+            let rodEndY = rotCenter.y + rodLength * Math.sin(angle);
+
+            ctx.strokeStyle = '#ecf0f1'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(rotCenter.x, rotCenter.y); ctx.lineTo(rodEndX, rodEndY); ctx.stroke();
+            ctx.lineCap = 'butt';
+
+            let eX = rotCenter.x + (rodLength - 12) * Math.cos(angle);
+            let eY = rotCenter.y + (rodLength - 12) * Math.sin(angle);
+
+            // --- C) VEKTORNYILAK (v és F_L) ---
+            let vAngle = angle + Math.PI / 2;
+            let vEndX = eX + 45 * Math.cos(vAngle);
+            let vEndY = eY + 45 * Math.sin(vAngle);
+            drawArrow(eX, eY, vEndX, vEndY, '#00ff66', 2.5); // Kerületi sebesség nyíl (v)
+
+            if (Math.abs(currentVoltage) > 2) {
+                let forceMagnitude = (currentVoltage / 70) * 45;
+                let fEndX = eX - forceMagnitude * Math.cos(angle);
+                let fEndY = eY - forceMagnitude * Math.sin(angle);
+                drawArrow(eX, eY, fEndX, fEndY, '#ff0055', 2.5); // Lorentz-erő nyíl (F_L)
+            }
+
+            // Elektron golyó
+            ctx.beginPath(); ctx.arc(eX, eY, 9, 0, 2 * Math.PI);
+            ctx.fillStyle = '#00f3ff'; ctx.shadowColor = '#00f3ff'; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+            ctx.fillStyle = '#111'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText("e⁻", eX, eY);
+
+            // Polaritás jelek (+/-)
+            ctx.font = 'bold 18px Arial';
+            if (currentVoltage > 5) {
+                ctx.fillStyle = '#ff4d4d'; ctx.fillText("+", rotCenter.x - 15 * Math.cos(angle), rotCenter.y - 15 * Math.sin(angle));
+                ctx.fillStyle = '#4d4dff'; ctx.fillText("-", eX + 18 * Math.cos(angle), eY + 18 * Math.sin(angle));
+            } else if (currentVoltage < -5) {
+                ctx.fillStyle = '#4d4dff'; ctx.fillText("-", rotCenter.x - 15 * Math.cos(angle), rotCenter.y - 15 * Math.sin(angle));
+                ctx.fillStyle = '#ff4d4d'; ctx.fillText("+", eX + 18 * Math.cos(angle), eY + 18 * Math.sin(angle));
+            }
+
+            // Szögérték
+            ctx.fillStyle = '#bbb'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+            let degree = Math.round(angle * (180 / Math.PI));
+            ctx.fillText(`α = ${degree}°`, rotCenter.x, rotCenter.y - rodLength - 20);
+
+            // --- D) OSZCILLOSZKÓP / SZINUSZ DIAGRAM ---
+            let graphCenterY = rotCenter.y;
+            ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2;
+            ctx.strokeRect(graphLeft, 50, graphWidth, canvas.height - 100);
+            
+            // 0V Időtengely
+            ctx.strokeStyle = '#4f5d73'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(graphLeft, graphCenterY); ctx.lineTo(graphLeft + graphWidth, graphCenterY); ctx.stroke();
+
+            ctx.fillStyle = '#888'; ctx.font = '11px Arial'; ctx.textAlign = 'left';
+            ctx.fillText("+U_max", graphLeft + 10, 65);
+            ctx.fillText("0 V", graphLeft + 10, graphCenterY - 6);
+            ctx.fillText("-U_max", graphLeft + 10, canvas.height - 65);
+            ctx.textAlign = 'right'; ctx.fillText("idő (t) →", graphLeft + graphWidth - 10, graphCenterY + 15);
+
+            // A szinuszgörbe kirajzolása a memóriából
+            if (voltageHistory.length > 1) {
+                ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 3;
+                ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 4;
+                ctx.beginPath();
+                for (let i = 0; i < voltageHistory.length; i++) {
+                    let ptX = graphLeft + i;
+                    let ptY = graphCenterY - voltageHistory[i];
+                    if (i === 0) ctx.moveTo(ptX, ptY);
+                    else ctx.lineTo(ptX, ptY);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // Élő piros követő pont az oszcilloszkópon
+            if (voltageHistory.length > 0) {
+                let liveY = graphCenterY - voltageHistory[0];
+                ctx.beginPath(); ctx.arc(graphLeft, liveY, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#ff4d4d'; ctx.fill();
+                
+                // Didaktikai összekötő segédvonal az elektron és az oszcilloszkóp között
+                ctx.strokeStyle = 'rgba(255, 77, 77, 0.35)'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(eX, eY); ctx.lineTo(graphLeft, liveY); ctx.stroke();
+            }
+
+            // --- E) ALSÓ ÁLLAPOTJELZŐ ---
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.06)'; ctx.fillRect(15, canvas.height - 35, canvas.width - 30, 25);
+            ctx.fillStyle = '#d0d0d0'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+            
+            let statusText = isRunning 
+                ? `Forgás folyamatban. Pillanatnyi feszültség: U = U_max · sin(${degree}°) = ${(currentVoltage/7).toFixed(1)} V`
+                : `Kimerevített állapot (${degree}°). Figyeld meg az érintő sebesség (v) és a Lorentz-erő arányát!`;
+            ctx.fillText(statusText, canvas.width / 2, canvas.height - 18);
+
+            requestAnimationFrame(updateAndRender);
+        }
+
+        updateAndRender();
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Váltakozó áram effektív értéke</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .box { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 15px; text-align: center; }
+        canvas { border: 1px solid #ddd; border-radius: 5px; max-width: 100%; }
+        .controls { display: flex; gap: 15px; align-items: center; justify-content: center; width: 700px; max-width: 95vw; }
+        input[type="range"] { flex-grow: 1; cursor: pointer; }
+        button { background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Váltakozó áram effektív értékének szemléltetése</h2>
+    <div class="box">
+        <canvas id="c" width="720" height="380"></canvas>
+    </div>
+    <div class="box controls">
+        <button id="btn">▶ Indítás</button>
+        <label>Átrendezés:</label>
+        <input type="range" id="sl" min="0" max="1" step="0.01" value="0">
+        <span id="txt">0%</span>
+    </div>
+    <script>
+        const c = document.getElementById('c');
+        const ctx = c.getContext('2d');
+        const sl = document.getElementById('sl');
+        const btn = document.getElementById('btn');
+        const txt = document.getElementById('txt');
+
+        const padL = 60, padR = 25, padT = 25, padB = 35;
+        const w = c.width - padL - padR;
+        const h = c.height - padT - padB;
+        let playing = false, dir = 1, animId = null;
+
+        const toX = r => padL + (r / (2 * Math.PI)) * w;
+        const toY = v => padT + ((1.15 - v) / 2.3) * h;
+        const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        function drawAxes() {
+            ctx.clearRect(0, 0, c.width, c.height);
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            [-1, -0.5, 0, 0.5, 0.7071, 1].forEach(v => {
+                const y = toY(v);
+                ctx.beginPath();
+                ctx.moveTo(padL, y);
+                ctx.lineTo(padL + w, y);
+                ctx.setLineDash(v === 0.5 || Math.abs(v - 0.7071) < 0.001 ? [5, 5] : []);
+                ctx.strokeStyle = v === 0 ? '#333' : (v === 0.5 ? '#e67e22' : (Math.abs(v - 0.7071) < 0.001 ? '#27ae60' : '#eee'));
+                ctx.lineWidth = (v === 0 || v === 0.5 || Math.abs(v - 0.7071) < 0.001) ? 1.5 : 1;
+                ctx.stroke();
+
+                ctx.fillStyle = v === 0.5 ? '#d35400' : (Math.abs(v - 0.7071) < 0.001 ? '#27ae60' : '#555');
+                let lbl = Math.abs(v - 0.7071) < 0.001 ? '1/√2' : (v === 0.5 ? '0.5' : v.toString());
+                ctx.fillText(lbl, padL - 8, y);
+            });
+            ctx.setLineDash([]);
+
+            ctx.beginPath();
+            ctx.moveTo(padL, padT);
+            ctx.lineTo(padL, padT + h);
+            ctx.strokeStyle = '#333';
+            ctx.stroke();
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = '#555';
+            [{r:0, l:'0'}, {r:Math.PI/2, l:'π/2'}, {r:Math.PI, l:'π'}, {r:1.5*Math.PI, l:'3π/2'}, {r:2*Math.PI, l:'2π'}].forEach(t => {
+                ctx.fillText(t.l, toX(t.r), toY(0) + 6);
+            });
+        }
+
+                function drawPiece(r1, r2, shift, prog) {
+            const p = ease(prog), steps = 50, dr = (r2 - r1) / steps;
+            const cOrig = (r1 + r2) / 2, cCur = cOrig + shift * p;
+            const flip = Math.cos(Math.PI * p); // 1-től -1-ig billen át az y=0.5 egyenesen
+
+            ctx.beginPath();
+            ctx.moveTo(toX(cCur + (r1 - cOrig)), toY(0.5));
+            for (let i = 0; i <= steps; i++) {
+                const r = r1 + i * dr, v = Math.pow(Math.sin(r), 2);
+                const fx = toX(cCur + (r - cOrig));
+                const fy = toY(0.5 + (v - 0.5) * flip);
+                ctx.lineTo(fx, fy);
+            }
+            ctx.lineTo(toX(cCur + (r2 - cOrig)), toY(0.5));
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(231, 76, 60, 0.6)';
+            ctx.fill();
+            ctx.strokeStyle = '#c0392b';
+            ctx.stroke();
+        }
+
+        function render() {
+            const p = parseFloat(sl.value);
+            txt.textContent = Math.round(p * 100) + '%';
+            drawAxes();
+
+            const steps = 300, dr = (2 * Math.PI) / steps;
+
+            // Alap terület (0.5 alatt)
+            ctx.beginPath();
+            ctx.moveTo(toX(0), toY(0));
+            for (let i = 0; i <= steps; i++) {
+                const r = i * dr;
+                ctx.lineTo(toX(r), toY(Math.min(Math.pow(Math.sin(r), 2), 0.5)));
+            }
+            ctx.lineTo(toX(2 * Math.PI), toY(0));
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.35)';
+            ctx.fill();
+
+            // Eredeti sin^2 körvonal
+            ctx.beginPath();
+            for (let i = 0; i <= steps; i++) {
+                const r = i * dr, v = Math.pow(Math.sin(r), 2);
+                i === 0 ? ctx.moveTo(toX(r), toY(v)) : ctx.lineTo(toX(r), toY(v));
+            }
+            ctx.strokeStyle = '#2980b9';
+            ctx.stroke();
+
+ // Áthelyezett csúcsok (0.5 feletti részek)
+            drawPiece(Math.PI / 4, 3 * Math.PI / 4, Math.PI / 2, p);
+            drawPiece(5 * Math.PI / 4, 3 * Math.PI / 2, Math.PI / 2, p);
+            drawPiece(3 * Math.PI / 2, 7 * Math.PI / 4, -3 * Math.PI / 2, p);
+            // Sima sin(x) görbe
+            ctx.beginPath();
+            for (let i = 0; i <= steps; i++) {
+                const r = i * dr, v = Math.sin(r);
+                i === 0 ? ctx.moveTo(toX(r), toY(v)) : ctx.lineTo(toX(r), toY(v));
+            }
+            ctx.strokeStyle = '#7f8c8d';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.lineWidth = 1;
+        }
+
+        function anim() {
+            if (!playing) return;
+            let v = parseFloat(sl.value) + 0.015 * dir;
+            if (v >= 1 || v <= 0) {
+                v = v >= 1 ? 1 : 0;
+                playing = false;
+                dir = v === 1 ? -1 : 1;
+                btn.textContent = v === 1 ? '↺ Vissza' : '▶ Indítás';
+            }
+            sl.value = v;
+            render();
+            if (playing) animId = requestAnimationFrame(anim);
+        }
+
+        btn.onclick = () => {
+            playing = !playing;
+            if (playing) {
+                if (parseFloat(sl.value) >= 1) dir = -1;
+                if (parseFloat(sl.value) <= 0) dir = 1;
+                btn.textContent = '⏸ Szünet';
+                anim();
+            } else {
+                btn.textContent = '▶ Folytatás';
+                cancelAnimationFrame(animId);
+            }
+        };
+
+        sl.oninput = () => {
+            playing = false;
+            btn.textContent = '▶ Indítás';
+            render();
+        };
+
+        render();
+    </script>
+</body>
+</html>

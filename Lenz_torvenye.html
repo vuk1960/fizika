@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mozgatási Indukció és Lenz-törvény Szimuláció</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: #333; margin-bottom: 5px; text-align: center; }
+        h2 { color: #555; font-size: 1.2rem; margin-top: 0; margin-bottom: 20px; text-align: center; font-weight: normal; }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 1100px;
+            width: 100%;
+        }
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex: 1;
+            min-width: 300px;
+        }
+        .simulation-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            border-radius: 12px;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        .checkbox-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #198754;
+        }
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #444;
+        }
+        .checkbox-group label {
+            display: inline;
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+        input[type="range"], select {
+            width: 100%;
+            padding: 6px;
+            box-sizing: border-box;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        .value-display {
+            font-weight: normal;
+            color: #0d6efd;
+            float: right;
+        }
+        .lenz-box {
+            margin-top: 15px;
+            background-color: #e8f4fd;
+            border: 1px solid #bbeeef;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #1c3d5a;
+        }
+        .instructions {
+            margin-top: 15px;
+            font-size: 0.85em;
+            color: #666;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Mozgatási Indukció Szimuláció</h1>
+    <h2>Lenz-törvényének szemléltetése</h2>
+    
+    <div class="container">
+        <!-- Beállítások panel -->
+        <div class="control-panel">
+            <h3>Beállítások</h3>
+            
+            <div class="control-group">
+                <label for="magneticB">Mágneses indukció (B): <span id="valB" class="value-display">1.0</span></label>
+                <input type="range" id="magneticB" min="0.2" max="2.5" step="0.1" value="1.0">
+            </div>
+            
+            <div class="control-group">
+                <label for="coilArea">Tekercs keresztmetszete (A): <span id="valA" class="value-display">1.0</span></label>
+                <input type="range" id="coilArea" min="0.5" max="2.0" step="0.1" value="1.0">
+            </div>
+
+            <div class="control-group">
+                <label for="poleSelect">Mágnes elülső pólusa:</label>
+                <select id="poleSelect">
+                    <option value="N">Északi (N) - Piros</option>
+                    <option value="S">Déli (S) - Kék</option>
+                </select>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="lenzEffect" checked>
+                <label for="lenzEffect"><strong>Lenz-féle ellenerő bekapcsolása</strong></label>
+            </div>
+
+            <div class="lenz-box" id="lenzExplanation">
+                <strong>Lenz-törvény figyelő:</strong> Nyugalom. Nincs indukált mező.
+            </div>
+
+            <div class="instructions">
+                <strong>Hogyan figyeld meg a Lenz-törvényt?</strong><br>
+                1. Kapcsold be a fenti jelölőnégyzetet.<br>
+                2. Ha az <strong>N (piros)</strong> pólust közelíted, a tekercsben olyan áram folyik, ami szintén <strong>N</strong> pólust hoz létre a bal szélén, hogy *taszítsa* a közeledőt (érezni fogod, hogy az egér "visszafogja" a mágnest).<br>
+                3. Ha távolítod, a tekercs <strong>S (kék)</strong> pólussá válik, hogy *visszatartsa* a mágnest.
+            </div>
+        </div>
+
+        <!-- Animációs rész -->
+        <div class="simulation-panel">
+            <canvas id="simCanvas" width="650" height="400"></canvas>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Csúszkák és elemek elérése
+        const inputB = document.getElementById('magneticB');
+        const inputA = document.getElementById('coilArea');
+        const selectPole = document.getElementById('poleSelect');
+        const checkLenz = document.getElementById('lenzEffect');
+        const valB = document.getElementById('valB');
+        const valA = document.getElementById('valA');
+        const lenzExplanation = document.getElementById('lenzExplanation');
+
+        // Fizikai / Képi változók
+        let B = parseFloat(inputB.value);
+        let A = parseFloat(inputA.value);
+        let pole = selectPole.value;
+
+        // Mágnes pozíciója és állapota
+        let magnet = {
+            x: 80,
+            y: 260,
+            width: 140,
+            height: 40,
+            isDragging: false
+        };
+
+        let lastX = magnet.x;
+        let voltage = 0;
+        let targetVoltage = 0;
+        let targetMouseX = magnet.x; 
+
+        // Eseménykezelők a csúszkákhoz
+        inputB.addEventListener('input', (e) => { B = parseFloat(e.target.value); valB.textContent = B.toFixed(1); });
+        inputA.addEventListener('input', (e) => { A = parseFloat(e.target.value); valA.textContent = A.toFixed(1); });
+        selectPole.addEventListener('change', (e) => { pole = e.target.value; });
+
+        // Egér / Érintés kezelés
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches.clientX : e.clientX;
+            const clientY = e.touches ? e.touches.clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function dragStart(e) {
+            const pos = getMousePos(e);
+            if (pos.x >= magnet.x && pos.x <= magnet.x + magnet.width &&
+                pos.y >= magnet.y - magnet.height/2 && pos.y <= magnet.y + magnet.height/2) {
+                magnet.isDragging = true;
+                lastX = magnet.x;
+                targetMouseX = pos.x - magnet.width / 2;
+            }
+        }
+
+        function dragMove(e) {
+            if (!magnet.isDragging) return;
+            e.preventDefault();
+            const pos = getMousePos(e);
+            targetMouseX = pos.x - magnet.width / 2;
+        }
+
+        function dragEnd() {
+            magnet.isDragging = false;
+        }
+
+        canvas.addEventListener('mousedown', dragStart);
+        canvas.addEventListener('mousemove', dragMove);
+        window.addEventListener('mouseup', dragEnd);
+
+        canvas.addEventListener('touchstart', dragStart, {passive: false});
+        canvas.addEventListener('touchmove', dragMove, {passive: false});
+        window.addEventListener('touchend', dragEnd);
+        // Fő animációs és fizikai ciklus
+        function updateAndRender() {
+            let coilX = 420, coilY = 260, coilWidth = 90, coilHeight = 50 * A;
+            let dx = 0;
+            
+            if (magnet.isDragging) {
+                let currentSpeed = targetMouseX - magnet.x;
+                let magnetFrontX = (pole === 'N') ? (magnet.x + magnet.width) : magnet.x;
+                let distToCoil = magnetFrontX - coilX;
+                let interactionFactor = Math.exp(-Math.pow(distToCoil / 100, 2));
+
+                if (checkLenz.checked && interactionFactor > 0.05) {
+                    let brakeForce = currentSpeed * (B * A * 0.4) * interactionFactor;
+                    magnet.x += currentSpeed - brakeForce;
+                } else {
+                    magnet.x = targetMouseX;
+                }
+                magnet.x = Math.max(10, Math.min(canvas.width - magnet.width - 10, magnet.x));
+                dx = magnet.x - lastX;
+                lastX = magnet.x;
+            } else {
+                dx = 0;
+                lastX = magnet.x;
+            }
+
+            if (Math.abs(dx) > 0.05) {
+                let directionModifier = (pole === 'N') ? -1 : 1;
+                targetVoltage = dx * B * A * 1.5 * directionModifier;
+            } else {
+                targetVoltage = 0;
+            }
+
+            voltage += (targetVoltage - voltage) * 0.15;
+
+            // Szöveges magyarázat frissítése
+            if (Math.abs(voltage) < 1) {
+                lenzExplanation.innerHTML = "<strong>Lenz-törvény figyelő:</strong> Nyugalom. Nincs fluxusváltozás, nincs indukált mező.";
+                lenzExplanation.style.backgroundColor = "#e8f4fd";
+            } else if ((dx > 0 && pole === 'N') || (dx < 0 && pole === 'S')) {
+                lenzExplanation.innerHTML = "<strong>Lenz-törvény működésben:</strong> A tekercs bal oldalán <strong>Északi (N) pólus</strong> keletkezik, hogy akadályozza a mágnes mozgását!";
+                lenzExplanation.style.backgroundColor = "#fce8e6";
+            } else {
+                lenzExplanation.innerHTML = "<strong>Lenz-törvény működésben:</strong> A tekercs bal oldalán <strong>Déli (S) pólus</strong> keletkezik, hogy vonzással akadályozza a mágnes mozgását!";
+                lenzExplanation.style.backgroundColor = "#eafaf1";
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // --- VOLTMÉRŐ ---
+            let meterX = 250, meterY = 100, r = 65;
+            ctx.beginPath(); ctx.arc(meterX, meterY, r, Math.PI, 0);
+            ctx.lineWidth = 3; ctx.strokeStyle = '#333'; ctx.stroke();
+
+            ctx.lineWidth = 1;
+            for(let i = 0; i <= 10; i++) {
+                let angle = Math.PI + (i * Math.PI / 10);
+                ctx.beginPath();
+                ctx.moveTo(meterX + (r - 7) * Math.cos(angle), meterY + (r - 7) * Math.sin(angle));
+                ctx.lineTo(meterX + r * Math.cos(angle), meterY + r * Math.sin(angle));
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#555'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+            ctx.fillText("0", meterX, meterY - r - 5);
+            ctx.fillText("-V", meterX - r + 10, meterY - 5);
+            ctx.fillText("+V", meterX + r - 10, meterY - 5);
+
+            // Terminál doboz és aljzatok
+            let boxW = 80, boxH = 22;
+            ctx.fillStyle = '#495057'; ctx.fillRect(meterX - boxW / 2, meterY, boxW, boxH);
+            ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(meterX - 20, meterY + boxH / 2, 4, 0, 2 * Math.PI); ctx.fill();
+            ctx.fillStyle = '#dc3545'; ctx.beginPath(); ctx.arc(meterX + 20, meterY + boxH / 2, 4, 0, 2 * Math.PI); ctx.fill();
+
+            // Mutató (Középtől tér ki)
+            let maxVoltX = 40; 
+            let clampedVolt = Math.max(-maxVoltX, Math.min(maxVoltX, voltage));
+            let pointerAngle = (Math.PI * 1.5) + (clampedVolt / maxVoltX) * (Math.PI / 4); 
+
+            ctx.beginPath(); ctx.moveTo(meterX, meterY);
+            ctx.lineTo(meterX + (r - 10) * Math.cos(pointerAngle), meterY + (r - 10) * Math.sin(pointerAngle));
+            ctx.lineWidth = 3; ctx.strokeStyle = '#dc3545'; ctx.stroke();
+            
+            ctx.beginPath(); ctx.arc(meterX, meterY, 5, 0, 2 * Math.PI); ctx.fillStyle = '#212529'; ctx.fill();
+
+            // Vezetékek
+            ctx.beginPath();
+            ctx.moveTo(meterX - 20, meterY + boxH / 2); ctx.lineTo(coilX - 20, coilY - 30);
+            ctx.moveTo(meterX + 20, meterY + boxH / 2); ctx.lineTo(coilX + coilWidth + 20, coilY - 30);
+            ctx.lineWidth = 2; ctx.strokeStyle = '#6c757d'; ctx.stroke();
+
+            // --- TEKERCS HÁTSÓ MENETEI ---
+            ctx.lineWidth = 4; ctx.strokeStyle = '#b87333';
+            let turns = 6;
+            for(let i = 0; i < turns; i++) {
+                let curX = coilX + (coilWidth / turns) * i;
+                ctx.beginPath(); ctx.ellipse(curX, coilY, 15, coilHeight / 2, 0, Math.PI / 2, (3 * Math.PI) / 2); ctx.stroke();
+            }
+
+            // --- MÁGNES ---
+            let halfW = magnet.width / 2;
+            ctx.fillStyle = (pole === 'N') ? '#0d6efd' : '#dc3545';
+            ctx.fillRect(magnet.x, magnet.y - magnet.height / 2, halfW, magnet.height);
+            ctx.fillStyle = 'white'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center';
+            ctx.fillText((pole === 'N') ? 'S' : 'N', magnet.x + 25, magnet.y + 5);
+
+            ctx.fillStyle = (pole === 'N') ? '#dc3545' : '#0d6efd';
+            ctx.fillRect(magnet.x + halfW, magnet.y - magnet.height / 2, halfW, magnet.height);
+            ctx.fillStyle = 'white'; ctx.fillText(pole, magnet.x + halfW + halfW - 25, magnet.y + 5);
+
+            // --- TEKERCS ELSŐ MENETEI ---
+            for(let i = 0; i < turns; i++) {
+                let curX = coilX + (coilWidth / turns) * i;
+                ctx.beginPath(); ctx.ellipse(curX, coilY, 15, coilHeight / 2, 0, (3 * Math.PI) / 2, Math.PI / 2); ctx.stroke();
+            }
+
+            // --- INDUKÁLT PÓLUSOK ÉS NYÍL ---
+            if (Math.abs(voltage) > 1.5) {
+                let inducedLeftPole = ((dx > 0 && pole === 'N') || (dx < 0 && pole === 'S')) ? "N" : "S";
+                ctx.font = 'bold 18px Arial'; ctx.textAlign = 'center';
+                
+                ctx.fillStyle = (inducedLeftPole === 'N') ? '#dc3545' : '#0d6efd';
+                ctx.fillText(inducedLeftPole, coilX - 25, coilY + 6);
+                ctx.fillStyle = (inducedLeftPole === 'N') ? '#0d6efd' : '#dc3545';
+                ctx.fillText((inducedLeftPole === 'N') ? 'S' : 'N', coilX + coilWidth + 25, coilY + 6);
+
+                ctx.strokeStyle = (inducedLeftPole === 'N') ? '#dc3545' : '#0d6efd';
+                ctx.lineWidth = 3; ctx.beginPath();
+                let arrowY = coilY - (coilHeight / 2) - 20;
+                if (inducedLeftPole === 'N') {
+                    ctx.moveTo(coilX + coilWidth, arrowY); ctx.lineTo(coilX, arrowY);
+                    ctx.lineTo(coilX + 8, arrowY - 5); ctx.moveTo(coilX, arrowY); ctx.lineTo(coilX + 8, arrowY + 5);
+                } else {
+                    ctx.moveTo(coilX, arrowY); ctx.lineTo(coilX + coilWidth, arrowY);
+                    ctx.lineTo(coilX + coilWidth - 8, arrowY - 5); ctx.moveTo(coilX + coilWidth, arrowY); ctx.lineTo(coilX + coilWidth - 8, arrowY + 5);
+                }
+                ctx.stroke();
+                ctx.fillStyle = ctx.strokeStyle; ctx.font = 'italic 11px Arial';
+                ctx.fillText("Indukált mező (B_ind)", coilX + coilWidth/2, arrowY - 10);
+            }
+
+            requestAnimationFrame(updateAndRender);
+        }
+
+        updateAndRender();
+    </script>
+</body>
+</html>

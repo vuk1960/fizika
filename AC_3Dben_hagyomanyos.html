@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klasszikus Generátor Elv 3D-ben</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        h1 { color: #222; margin-bottom: 5px; text-align: center; }
+        h2 { color: #666; font-size: 1.1rem; margin-top: 0; margin-bottom: 20px; text-align: center; font-weight: normal; }
+        .container {
+            display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
+            max-width: 1250px; width: 100%;
+        }
+        .control-panel {
+            background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08); flex: 1; min-width: 330px; max-width: 370px;
+        }
+        .simulation-panel {
+            background: #11161b; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            position: relative; overflow: hidden;
+        }
+        canvas { display: block; border-radius: 12px; }
+        .control-group { margin-bottom: 18px; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 18px; }
+        button {
+            flex: 1; padding: 12px; font-size: 1rem; font-weight: bold;
+            border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;
+        }
+        .btn-start { background-color: #198754; color: white; }
+        .btn-start:hover { background-color: #157347; }
+        .btn-reset { background-color: #6c757d; color: white; }
+        .btn-reset:hover { background-color: #5c636a; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; color: #444; }
+        input[type="range"] { width: 100%; padding: 5px; box-sizing: border-box; }
+        .value-display { font-weight: normal; color: #0d6efd; float: right; }
+        .explanation-box {
+            margin-top: 15px; background: #e8f4fd; padding: 12px; border-radius: 8px;
+            font-size: 0.85em; color: #1c3d5a; line-height: 1.4; border-left: 5px solid #0d6efd;
+        }
+        .legend { margin-top: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; font-size: 0.8em; }
+        .legend-item { margin: 4px 0; display: flex; align-items: center; gap: 8px; }
+        .color-box { width: 10px; height: 10px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <h1>Klasszikus Generátor Elv 3D-ben</h1>
+    <h2>Rajzsíkra merőlegesen forgó rúd térbeli perspektívája és a szinuszos feszültség</h2>
+    
+    <div class="container">
+        <div class="control-panel">
+            <h3>Vezérlés</h3>
+            <div class="btn-group">
+                <button class="btn-start" id="startBtn">Forgatás (Start)</button>
+                <button class="btn-reset" id="resetBtn">Alaphelyzet</button>
+            </div>
+            <div class="control-group">
+                <label for="speedSlider">Forgatási sebesség (ω): <span id="valW" class="value-display">Közepes</span></label>
+                <input type="range" id="speedSlider" min="0.5" max="2.5" step="0.5" value="1.5">
+            </div>
+            <div class="control-group">
+                <label for="strengthSlider">Mágneses tér (B): <span id="valB" class="value-display">1.0 T</span></label>
+                <input type="range" id="strengthSlider" min="0.5" max="2.0" step="0.5" value="1.0">
+            </div>
+            <div class="legend">
+                <strong>Vektorok 3D-ben:</strong>
+                <div class="legend-item"><div class="color-box" style="background: #00ff66;"></div> Kerületi sebességvektor (<span style="color:#00ff66;">v</span>)</div>
+                <div class="legend-item"><div class="color-box" style="background: #ff0055;"></div> Lorentz-erő a rúd hossza mentén (<span style="color:#ff0055;">F_L</span>)</div>
+                <div class="legend-item"><div class="color-box" style="background: #ffcc00;"></div> Indukált váltakozó feszültség (<span style="color:#ffcc00;">U</span>)</div>
+            </div>
+            <div class="explanation-box">
+                <strong>Tankönyvi kapcsolat:</strong> A rúd a képernyő síkjára merőleges. Amikor vízszintesen halad átt a függőleges mágneses mezőn, a Lorentz-erő a harmadik dimenzió mélysége mentén éri el a maximumát!
+            </div>
+        </div>
+        <div class="simulation-panel">
+            <canvas id="simCanvas" width="850" height="420"></canvas>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        const strengthSlider = document.getElementById('strengthSlider');
+        const valW = document.getElementById('valW');
+        const valB = document.getElementById('valB');
+
+        let isRunning = false;
+        let angle = 0; 
+        let omega = parseFloat(speedSlider.value) * 0.015; 
+        let B_strength = parseFloat(strengthSlider.value);
+        
+        // Mindig fixen egy üres tömbként inicializáljuk a memóriát
+        let voltageHistory = [];
+        const maxHistoryPoints = 350; 
+
+        const rotCenter = { x: 220, y: 210 }; 
+        const orbitRadius = 90; 
+
+        const tiltX = Math.PI / 6; 
+        const tiltY = -Math.PI / 8; 
+
+        const graphLeft = 450;  
+        const graphWidth = 360; 
+
+        const speedTexts = { "0.5": "Nagyon lassú", "1.0": "Lassú", "1.5": "Közepes", "2.0": "Gyors", "2.5": "Nagyon gyors" };
+        speedSlider.addEventListener('input', (e) => {
+            omega = parseFloat(e.target.value) * 0.015;
+            valW.textContent = speedTexts[e.target.value];
+        });
+
+        strengthSlider.addEventListener('input', (e) => {
+            B_strength = parseFloat(e.target.value);
+            valB.textContent = B_strength.toFixed(1) + " T";
+        });
+
+        startBtn.addEventListener('click', () => {
+            isRunning = !isRunning;
+            if (isRunning) {
+                startBtn.textContent = "Leállítás (Stop)";
+                startBtn.style.backgroundColor = "#dc3545";
+            } else {
+                startBtn.textContent = "Forgatás (Start)";
+                startBtn.style.backgroundColor = "#198754";
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            isRunning = false;
+            startBtn.textContent = "Forgatás (Start)";
+            startBtn.style.backgroundColor = "#198754";
+            angle = 0;
+            voltageHistory = [];
+            speedSlider.value = "1.5";
+            strengthSlider.value = "1.0";
+            omega = 1.5 * 0.015;
+            valW.textContent = "Közepes";
+            valB.textContent = "1.0 T";
+        });
+        function project3D(x, y, z) {
+            let cosX = Math.cos(tiltX), sinX = Math.sin(tiltX);
+            let cosY = Math.cos(tiltY), sinY = Math.sin(tiltY);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = y * sinX + z1 * cosX;
+            let perspective = 300 / (300 + z2);
+            return { x: rotCenter.x + x1 * perspective, y: rotCenter.y + y2 * perspective, depth: z2 };
+        }
+
+        function drawArrow(x1, y1, x2, y2, color, lineWidth = 3) {
+            const headLength = 9;
+            const a = Math.atan2(y2 - y1, x2 - y1);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLength * Math.cos(a - Math.PI / 6), y2 - headLength * Math.sin(a - Math.PI / 6));
+            ctx.lineTo(x2 - headLength * Math.cos(a + Math.PI / 6), y2 - headLength * Math.sin(a + Math.PI / 6));
+            ctx.fill();
+        }
+
+        function updateAndRender() {
+            if (isRunning) {
+                angle += omega;
+                if (angle > Math.PI * 2) angle -= Math.PI * 2;
+            }
+
+            let currentVoltage = Math.sin(angle) * B_strength * 75;
+
+            // JAVÍTÁS: A voltageHistory MINDIG tömb (lista) marad, sosem írjuk felül egy sima számmal!
+            if (isRunning || voltageHistory.length === 0) {
+                voltageHistory.unshift(currentVoltage);
+                if (voltageHistory.length > maxHistoryPoints) {
+                    voltageHistory.pop();
+                }
+            } else {
+                // Megállított állapotban csak a legfrissebb (legelső) elemet frissítjük a tűhöz
+                voltageHistory[0] = currentVoltage;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Függőleges B tér erővonalak rajzolása
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.12)';
+            for (let i = -2; i <= 2; i++) {
+                for (let j = -2; j <= 2; j++) {
+                    let pStart = project3D(i * 60, -120, j * 50);
+                    let pEnd = project3D(i * 60, 120, j * 50);
+                    drawArrow(pStart.x, pStart.y, pEnd.x, pEnd.y, 'rgba(0, 255, 204, 0.08)', 1.5);
+                }
+            }
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'left';
+            ctx.fillText("Mágneses tér (B): FÜGGŐLEGESEN LEFELÉ", 20, 25);
+
+            let axisStart = project3D(0, 0, -150);
+            let axisEnd = project3D(0, 0, 150);
+            ctx.strokeStyle = '#4f5d73'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(axisStart.x, axisStart.y); ctx.lineTo(axisEnd.x, axisEnd.y); ctx.stroke();
+
+            ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            for (let a = 0; a <= Math.PI * 2 + 0.1; a += 0.1) {
+                let p = project3D(orbitRadius * Math.cos(a), orbitRadius * Math.sin(a), 0);
+                if (a === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            }
+            ctx.stroke();
+            let coreX = orbitRadius * Math.cos(angle);
+            let coreY = orbitRadius * Math.sin(angle);
+
+            let rStart3D = project3D(coreX, coreY, -60); 
+            let rEnd3D = project3D(coreX, coreY, 60);   
+
+            let armCenter = project3D(coreX, coreY, 0);
+            ctx.strokeStyle = '#5a6b82'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(rotCenter.x, rotCenter.y); ctx.lineTo(armCenter.x, armCenter.y); ctx.stroke();
+
+            ctx.strokeStyle = '#ecf0f1'; ctx.lineWidth = 8; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(rStart3D.x, rStart3D.y); ctx.lineTo(rEnd3D.x, rEnd3D.y); ctx.stroke();
+            ctx.lineCap = 'butt';
+
+            let eX = armCenter.x;
+            let eY = armCenter.y;
+
+            let vAngle = angle + Math.PI / 2;
+            let vX3D = coreX + 45 * Math.cos(vAngle);
+            let vY3D = coreY + 45 * Math.sin(vAngle);
+            let vProjected = project3D(vX3D, vY3D, 0);
+            drawArrow(eX, eY, vProjected.x, vProjected.y, '#00ff66', 2.5); 
+
+            if (Math.abs(currentVoltage) > 2) {
+                let forceZ = (currentVoltage / 75) * 50; 
+                let fProjected = project3D(coreX, coreY, forceZ);
+                drawArrow(eX, eY, fProjected.x, fProjected.y, '#ff0055', 3); 
+            }
+
+            ctx.beginPath(); ctx.arc(eX, eY, 9, 0, 2 * Math.PI);
+            ctx.fillStyle = '#00f3ff'; ctx.shadowColor = '#00f3ff'; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+            ctx.fillStyle = '#111'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText("e⁻", eX, eY);
+
+            ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center';
+            if (currentVoltage > 5) {
+                ctx.fillStyle = '#ff4d4d'; ctx.fillText("+", rStart3D.x - 12, rStart3D.y - 5); 
+                ctx.fillStyle = '#4d4dff'; ctx.fillText("-", rEnd3D.x + 12, rEnd3D.y + 12);   
+            } else if (currentVoltage < -5) {
+                ctx.fillStyle = '#4d4dff'; ctx.fillText("-", rStart3D.x - 12, rStart3D.y - 5); 
+                ctx.fillStyle = '#ff4d4d'; ctx.fillText("+", rEnd3D.x + 12, rEnd3D.y + 12);   
+            }
+
+            ctx.fillStyle = '#bbb'; ctx.font = '12px Arial';
+            let degree = Math.round(angle * (180 / Math.PI));
+            ctx.fillText(`α = ${degree}°`, rotCenter.x, rotCenter.y - orbitRadius - 30);
+
+            let graphCenterY = rotCenter.y;
+            ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2;
+            ctx.strokeRect(graphLeft, 50, graphWidth, canvas.height - 100);
+            
+            ctx.strokeStyle = '#4f5d73'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(graphLeft, graphCenterY); ctx.lineTo(graphLeft + graphWidth, graphCenterY); ctx.stroke();
+
+            ctx.fillStyle = '#888'; ctx.font = '11px Arial'; ctx.textAlign = 'left';
+            ctx.fillText("+U_max", graphLeft + 10, 65);
+            ctx.fillText("0 V", graphLeft + 10, graphCenterY - 6);
+            ctx.fillText("-U_max", graphLeft + 10, canvas.height - 65);
+            ctx.textAlign = 'right'; ctx.fillText("idő (t) →", graphLeft + graphWidth - 10, graphCenterY + 15);
+
+            // JAVÍTÁS: A voltageHistory tömbből kinyert pontok kirajzolása biztonságos indexeléssel történik
+            if (voltageHistory.length > 1) {
+                ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 3;
+                ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 4;
+                ctx.beginPath();
+                for (let i = 0; i < voltageHistory.length; i++) {
+                    let ptX = graphLeft + i;
+                    let ptY = graphCenterY - voltageHistory[i];
+                    if (i === 0) ctx.moveTo(ptX, ptY);
+                    else ctx.lineTo(ptX, ptY);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // JAVÍTÁS: Követő pont és didaktikai szaggatott vonal javítása (mindig a tömb 0. eleméből számol)
+            if (voltageHistory.length > 0) {
+                let liveY = graphCenterY - voltageHistory[0];
+                ctx.beginPath(); ctx.arc(graphLeft, liveY, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#ff4d4d'; ctx.fill();
+                
+                ctx.strokeStyle = 'rgba(255, 77, 77, 0.25)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+                ctx.beginPath(); ctx.moveTo(eX, eY); ctx.lineTo(graphLeft, liveY); ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'; ctx.fillRect(15, canvas.height - 35, canvas.width - 30, 25);
+            ctx.fillStyle = '#d0d0d0'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+            let statusText = isRunning 
+                ? `3D Forgás fut. Indukált feszültség: U = U_max · sin(${degree}°) = ${(currentVoltage/7.5).toFixed(1)} V`
+                : `Kimerevítve az α = ${degree}° helyzetben. Figyeld meg a Lorentz-erőt a rúd hossza mentén (3D mélységben)!`;
+            ctx.fillText(statusText, canvas.width / 2, canvas.height - 18);
+
+            requestAnimationFrame(updateAndRender);
+        }
+
+        updateAndRender();
+    </script>
+</body>
+</html>
